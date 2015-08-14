@@ -17,18 +17,8 @@ using atbApi.data;
 namespace atbApi
 {
 
-    public class IrrigationModule : IAtbApi
+    public class IrrigationModule
     {
-        public ICollection<String> getPlantNames()
-        {
-            return PlantDb.GetPlantNames();
-        }
-
-        public Plant createPlant(String name)
-        {
-            return new Plant(name);
-        }
-
         public int transpirationCalc(Plant plant, DateTime seedDate, DateTime harvestDate)
         {
             return plant.stageTotal;

@@ -1,22 +1,48 @@
-﻿using System;
+﻿/*!
+ * \file    CsvReader.cs
+ *
+ * \brief   Implements the CSV reader class.
+ *
+ * \author  Hantigk
+ * \date    13.08.2015
+ */
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 
 namespace local
 {
-    class CsvReader
+    /*!
+     * \brief   A CSV reader.
+     *
+     */
+
+    internal class CsvReader
     {
         private StreamReader stream;
         private IEnumerable<String> fieldNames;
 
-        public CsvReader(Stream stream)
+        /*!
+         * \brief   Constructor, parses first line and initializes the fieldNames
+         *
+         * \param   stream  A readable stream to read csv data from, line by line
+         */
+
+        internal CsvReader(Stream stream)
         {
             this.stream = new StreamReader(stream);
             fieldNames = parseLine();
         }
 
-        public IDictionary<String, String> readLine()
+        /*!
+         * \brief   Reads one line with parseLine() function and maps the strings to the fields as Dictionary<String, String>
+         *
+         * \return  Dictionary<String, String>
+         */
+
+        internal IDictionary<String, String> readLine()
         {
             if (stream.EndOfStream) return null;
 
@@ -25,10 +51,22 @@ namespace local
               .ToDictionary(x => x.k, x => x.v);
         }
 
-        public bool EndOfStream()
+        /*!
+         * \brief   check if stream is at end
+         *
+         * \return  true if stream is at end, false otherwise
+         */
+
+        internal bool EndOfStream()
         {
             return stream.EndOfStream;
         }
+
+        /*!
+         * \brief   reads one line from stream, split it into subStrings, trims and process escape sequences
+         *
+         * \return  sorted list with strings
+         */
 
         private IEnumerable<String> parseLine()
         {

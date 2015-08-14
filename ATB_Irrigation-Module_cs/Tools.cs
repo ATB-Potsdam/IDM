@@ -4,14 +4,14 @@ using System.Reflection;
 
 namespace local
 {
-    public static class Tools
+    internal static class Tools
     {
-        public static double Linear_day(int iterator, int startIterator, int endIterator, double startValue, double endValue)
+        internal static double Linear_day(int iterator, int startIterator, int endIterator, double startValue, double endValue)
         {
             return (iterator - startIterator) * (endValue - startValue) / (endIterator - startIterator + 1) + startValue;
         }
 
-        public static T MergeObjects<T>(T target, T source)
+        internal static T MergeObjects<T>(T target, T source)
         {
             if (target == null) return source;
             if (source == null) return target;

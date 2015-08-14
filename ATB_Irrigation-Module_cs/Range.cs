@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace atbApi
+namespace local
 {
-    public class Range<TValue, TPayload>
+    internal class Range<TValue, TPayload>
             where TValue : IComparable<TValue>
     {
         public TValue Min { get; set; }
@@ -20,7 +20,7 @@ namespace atbApi
         }
     }
 
-    public class RangeComparer<TValue, TPayload>
+    internal class RangeComparer<TValue, TPayload>
         where TValue : IComparable<TValue>
     {
         private int Compare(Range<TValue, TPayload> range, TValue value)

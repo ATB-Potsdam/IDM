@@ -4,9 +4,9 @@ using System.Reflection;
 
 namespace local
 {
-    public static class ResourceStream
+    internal static class ResourceStream
     {
-        public static Stream GetResourceStream(String resourceName)
+        internal static Stream GetResourceStream(String resourceName)
         {
             Assembly assembly = Assembly.GetExecutingAssembly();
 
