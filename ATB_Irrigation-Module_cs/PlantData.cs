@@ -1,5 +1,5 @@
 ﻿/*!
-* \file		plantData.cs
+* \file		PlantData.cs
 *
 * \brief	Class file for plant database, parameter types and data access
 * \author	Hunstock
@@ -9,7 +9,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Reflection;
 using System.IO;
 using System.IO.Compression;
 using local;

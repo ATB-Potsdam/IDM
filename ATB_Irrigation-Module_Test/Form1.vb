@@ -6,13 +6,22 @@ Public Class Form1
         InitializeComponent()
 
         ' Add any initialization after the InitializeComponent() call.
-        Dim names = atbApi.data.LocalPlantDb.Instance.getPlantNames()
+        Dim plantNames = atbApi.data.LocalPlantDb.Instance.getPlantNames()
 
-        For i = 0 To names.Count - 1
-            ComboBox1.Items.Add(names(i))
+        For i = 0 To plantNames.Count - 1
+            ComboBox1.Items.Add(plantNames(i))
         Next
 
         ComboBox1.Sorted = True
+
+        ' Add any initialization after the InitializeComponent() call.
+        Dim soilNames = atbApi.data.LocalSoilDb.Instance.getSoilNames()
+
+        For i = 0 To soilNames.Count - 1
+            ComboBox2.Items.Add(soilNames(i))
+        Next
+
+        ComboBox2.Sorted = True
     End Sub
 
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
@@ -57,5 +66,21 @@ Public Class Form1
         fs.Close()
         Dim filePlant As atbApi.data.Plant = New atbApi.data.Plant("CROPWAT_80_Crop_data_CITRUS_70p_ca_bare", plantDb)
         TextBox1.AppendText(filePlant.stageTotal.ToString() + " " + filePlant.name + vbNewLine)
+    End Sub
+
+    Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click
+        Dim soil As atbApi.data.Soil = New atbApi.data.Soil(ComboBox2.SelectedItem)
+
+        For z = 0 To 2 Step 0.01
+            Dim soilSet As atbApi.data.SoilValues = soil.getValues(z)
+            If IsNothing(soilSet) Then
+                Continue For
+            End If
+            For Each _property As PropertyInfo In soilSet.GetType().GetProperties()
+                If _property.GetValue(soilSet, Nothing) <> Nothing Then
+                    TextBox1.AppendText(z.ToString() + ": " + _property.Name + ": " + _property.GetValue(soilSet, Nothing).ToString() + vbNewLine)
+                End If
+            Next
+        Next
     End Sub
 End Class

@@ -26,21 +26,23 @@ Partial Class Form1
         Me.TextBox1 = New System.Windows.Forms.TextBox()
         Me.ComboBox1 = New System.Windows.Forms.ComboBox()
         Me.Button2 = New System.Windows.Forms.Button()
-        Me.SuspendLayout()
+        Me.Button3 = New System.Windows.Forms.Button()
+        Me.ComboBox2 = New System.Windows.Forms.ComboBox()
+        Me.SuspendLayout
         '
         'Button1
         '
-        Me.Button1.Location = New System.Drawing.Point(354, 13)
+        Me.Button1.Location = New System.Drawing.Point(334, 11)
         Me.Button1.Name = "Button1"
-        Me.Button1.Size = New System.Drawing.Size(75, 23)
+        Me.Button1.Size = New System.Drawing.Size(131, 23)
         Me.Button1.TabIndex = 0
-        Me.Button1.Text = "Button1"
-        Me.Button1.UseVisualStyleBackColor = True
+        Me.Button1.Text = "Plant from local"
+        Me.Button1.UseVisualStyleBackColor = true
         '
         'TextBox1
         '
-        Me.TextBox1.Location = New System.Drawing.Point(25, 74)
-        Me.TextBox1.Multiline = True
+        Me.TextBox1.Location = New System.Drawing.Point(25, 121)
+        Me.TextBox1.Multiline = true
         Me.TextBox1.Name = "TextBox1"
         Me.TextBox1.ScrollBars = System.Windows.Forms.ScrollBars.Both
         Me.TextBox1.Size = New System.Drawing.Size(404, 105)
@@ -48,7 +50,7 @@ Partial Class Form1
         '
         'ComboBox1
         '
-        Me.ComboBox1.FormattingEnabled = True
+        Me.ComboBox1.FormattingEnabled = true
         Me.ComboBox1.Location = New System.Drawing.Point(25, 13)
         Me.ComboBox1.Name = "ComboBox1"
         Me.ComboBox1.Size = New System.Drawing.Size(303, 21)
@@ -56,18 +58,37 @@ Partial Class Form1
         '
         'Button2
         '
-        Me.Button2.Location = New System.Drawing.Point(476, 12)
+        Me.Button2.Location = New System.Drawing.Point(474, 11)
         Me.Button2.Name = "Button2"
         Me.Button2.Size = New System.Drawing.Size(131, 23)
         Me.Button2.TabIndex = 3
         Me.Button2.Text = "Plant from file"
-        Me.Button2.UseVisualStyleBackColor = True
+        Me.Button2.UseVisualStyleBackColor = true
+        '
+        'Button3
+        '
+        Me.Button3.Location = New System.Drawing.Point(334, 63)
+        Me.Button3.Name = "Button3"
+        Me.Button3.Size = New System.Drawing.Size(131, 23)
+        Me.Button3.TabIndex = 4
+        Me.Button3.Text = "Soil from local"
+        Me.Button3.UseVisualStyleBackColor = true
+        '
+        'ComboBox2
+        '
+        Me.ComboBox2.FormattingEnabled = true
+        Me.ComboBox2.Location = New System.Drawing.Point(25, 63)
+        Me.ComboBox2.Name = "ComboBox2"
+        Me.ComboBox2.Size = New System.Drawing.Size(303, 21)
+        Me.ComboBox2.TabIndex = 5
         '
         'Form1
         '
-        Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
+        Me.AutoScaleDimensions = New System.Drawing.SizeF(6!, 13!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(619, 262)
+        Me.ClientSize = New System.Drawing.Size(834, 470)
+        Me.Controls.Add(Me.ComboBox2)
+        Me.Controls.Add(Me.Button3)
         Me.Controls.Add(Me.Button2)
         Me.Controls.Add(Me.ComboBox1)
         Me.Controls.Add(Me.TextBox1)
@@ -82,5 +103,7 @@ End Sub
     Friend WithEvents TextBox1 As System.Windows.Forms.TextBox
     Friend WithEvents ComboBox1 As System.Windows.Forms.ComboBox
     Friend WithEvents Button2 As System.Windows.Forms.Button
+    Friend WithEvents Button3 As System.Windows.Forms.Button
+    Friend WithEvents ComboBox2 As System.Windows.Forms.ComboBox
 
 End Class

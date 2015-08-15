@@ -19,29 +19,8 @@ namespace atbApi
 {
     namespace data
     {
-        public static class ClimateDb
-        {
-            private static String climateDataResource = "local.IWRM_ATB-PlantData.csv";
-            
-            public static Stream GetResourceStream() {
-                Assembly assembly = Assembly.GetExecutingAssembly();
 
-                return assembly.GetManifestResourceStream("local.IWRM_ATB-PlantData.csv");
-            }
-            
-            public static ICollection<String> GetPlantNames()
-            {
-                ICollection<String> names = new HashSet<String>();
-
-                CsvReader csvReader = new CsvReader(ResourceStream.GetResourceStream(climateDataResource));
-                while (!csvReader.EndOfStream())
-                {
-                    IDictionary<String, String> fields = csvReader.readLine();
-                    names.Add(fields["dataObjName"]);
-                }
-                return names;
-            }
-        }
+        /*! Values that represent different time steps. */
         public enum TimeStep
         {
             /*! hourly timeStep */
@@ -50,16 +29,17 @@ namespace atbApi
             day = 0x1,
             /*! monthly timeStep */
             month = 0x2,
-        };
+        }
+
+
+        /*!
+        * \brief	defines a collection of climate values.
+        *
+        * \remarks	if "mean_temp" is ommitted, <c>max_temp + min_temp / 2</c> is used.
+        */
 
         public class ClimateValues : BaseValues
         {
-            /*!
-            * \brief	defines a collection of climate values.
-            *
-            * \remarks	if "mean_temp" is ommitted, <c>max_temp + min_temp / 2</c> is used.
-            */
-
             /*! maximum temperature [°C]. */
             public Double? max_temp { get; set; }
             /*! minimum temperature [°C]. */
@@ -82,7 +62,7 @@ namespace atbApi
             {
                 base.parseData(values);
             }
-        };
+        }
 
         /*!
          * \brief   Aggregated climate data for a calculation of a cropsequence: The data must begin at first
@@ -94,49 +74,33 @@ namespace atbApi
         {
             /*! vector with data. */
             private IDictionary<DateTime, ClimateValues> climateData = new Dictionary<DateTime, ClimateValues>();
-            /*! start date of data. */
-            public DateTime start { get; set; }
             /*! incremental step of data vector. */
             public TimeStep step { get; set; }
 
-                        public Climate(String name)
-                : this(name, ClimateDb.GetResourceStream())
+            public Climate()
             {
+                this.step = TimeStep.month;
             }
 
-  public Climate(String name, Stream stream)
+            public Climate(TimeStep step)
             {
-/*
-                if (name == null) return;
-
-                this.name = name;
-                CsvReader csvReader = new CsvReader(stream);
-                while (!csvReader.EndOfStream())
-                {
-                    IDictionary<String, String> fields = csvReader.readLine();
-                    if (!name.Equals(fields["dataObjName"])) continue;
-
-                    PlantValues values = new PlantValues();
-                    values.parseData(fields);
-                    int _iterator = Int32.Parse(fields["_iterator"], CultureInfo.InvariantCulture);
-                    plantData.Add(_iterator, values);
-                    this.stageTotal = Math.Max(this.stageTotal, _iterator);
-                }
-*/
+                this.step = step;
             }
 
-            /*
-        public ClimateValues getSet(int iterator)
-        {
-            PlantValues defaultSet;
-            PlantValues resultSet;
-            plantData.TryGetValue(0, out defaultSet);
-            plantData.TryGetValue(iterator, out resultSet);
-
-            return Tools.MergeObjects<PlantValues>(defaultSet, resultSet);
-        }
+            /*!
+             * \brief   Get values for a given date.
+             *
+             * \param   date The date to get data for. It is adjusted to next lower bound of the timestep
+             *
+             * \return  The values if available for requested date, else null is returned.
              */
 
-        };
+            public ClimateValues getValues(DateTime date)
+            {
+                ClimateValues resultSet;
+                climateData.TryGetValue(Tools.AdjustTimeStep(date, step), out resultSet);
+                return resultSet;
+            }
+        }
     }
 }

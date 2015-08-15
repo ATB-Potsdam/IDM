@@ -2,6 +2,8 @@
 using System.Linq;
 using System.Reflection;
 
+using atbApi.data;
+
 namespace local
 {
     internal static class Tools
@@ -27,6 +29,21 @@ namespace local
                     prop.SetValue(target, value, null);
             }
             return target;
+        }
+
+        internal static DateTime AdjustTimeStep(DateTime date, TimeStep step)
+        {
+            //adjust date to lower bound
+            switch (step)
+            {
+                case TimeStep.hour:
+                    return new DateTime(date.Year, date.Month, date.Day, date.Hour, 0, 0, 0, date.Kind);
+                case TimeStep.day:
+                    return new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, 0, date.Kind);
+                case TimeStep.month:
+                    return new DateTime(date.Year, date.Month, 1, 0, 0, 0, 0, date.Kind);
+            }
+            return date;
         }
     }
 }
