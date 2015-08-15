@@ -1,10 +1,11 @@
 ﻿/*!
-* \file		SoilData.cs
-*
-* \brief	Class file for soil database, parameter types and data access
-* \author	Hunstock
-* \date     09.07.2015
-*/
+ * \file		SoilData.cs
+ *
+ * \brief	Class file for soil database, parameter types and data access
+ *
+ * \author	Hunstock
+ * \date     09.07.2015
+ */
 
 using System;
 using System.Collections.Generic;

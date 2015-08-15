@@ -2,6 +2,7 @@
  * \file    IrrigationData.cs
  *
  * \brief	Class file for irrigation types and values
+ *
  * \author	Hunstock
  * \date     15.08.2015
  */

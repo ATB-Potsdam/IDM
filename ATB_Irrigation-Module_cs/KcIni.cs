@@ -1,4 +1,13 @@
-﻿using System;
+﻿/*!
+ * \file    KcIni.cs
+ *
+ * \brief   Implements the model for the calculation of kc for the initial plant stage.
+ *  
+ * \author  Hunstock
+ * \date    15.08.2015
+ */
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,6 +18,11 @@ using local;
 
 namespace atbApi
 {
+    /*!
+     * \brief   Encapsulates the result of a kcIni calculation.
+     *
+     */
+
     public class KcIniResult
     {
         /*! runtimeMs, unit: "ms", description: Actual runtime of this model in milliseconds. */
@@ -69,8 +83,35 @@ namespace atbApi
         public Double? kcIni { get; set; }
     }
 
+    /*!
+     * \brief   Model to calculate kc for the initial plant stage according to FAO paper 56.
+     *
+     */
+
     internal class KcIni
     {
+        /*!
+         * \brief   function to run calculation.
+         *
+         * \param   climate             The climate dataset.
+         * \param   soil                The soil data.
+         * \param   irrigation          The irrigation schedule.
+         * \param   et0                 The et0 values for calculation timespan.
+         * \param   startDate           The start of the initial plant stage.
+         * \param   initialLength       Length of the initial plant stage.
+         * \param   location            The geographical location.
+         * \param   delpetionDeInitial  The initial condition for depletion in evaporation layer.
+         * \param   ze                  The depth of the evaporation layer.
+         * \param   autoIrr             Set to true to automatically irrigate.
+         * \param   autoIrrLevel        If "autoIrr" is true, it will start at this fraction of available soil water. The value 0.8 is for 80%.
+         * \param   autoIrrCutoff       If "autoIrr" is true _and_ "autoIrrAmount" is 0 (automatic amount calculation), then the amount is calculated to saturate the soil right up to "autoIrrCutoff" value.
+         * \param   autoIrrAmount       If "autoIrr" is true, this amount of irrigation is added per day, if available soil water drops below "autoIrrLevel". If this value is 0, then the amount of drainage from last day is added if available soil water drops below "autoIrrLevel".
+         * \param   autoIrrType         If "autoIrr" is true, this type of irrigation system is used for calculation of interception and fraction wetted.
+         * \param   eFactor             The calculated value of evaporation is always multiplied by this factor to reduce evaporation because of e.g. mulching.
+         *
+         * \return  A KcIniResult structure with kcIni value and intermediate results.
+         */
+
         internal KcIniResult kcIniCalc(
             Climate climate,
             Soil soil,

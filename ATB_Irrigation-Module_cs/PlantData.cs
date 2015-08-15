@@ -1,10 +1,11 @@
 ﻿/*!
-* \file		PlantData.cs
-*
-* \brief	Class file for plant database, parameter types and data access
-* \author	Hunstock
-* \date     09.07.2015
-*/
+ * \file		PlantData.cs
+ *
+ * \brief	Class file for plant database, parameter types and data access
+ *  
+ * \author	Hunstock
+ * \date     09.07.2015
+ */
 
 using System;
 using System.Collections.Generic;

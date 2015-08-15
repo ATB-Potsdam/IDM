@@ -1,9 +1,22 @@
-﻿using System;
+﻿/*!
+ * \file    Tools.cs
+ *
+ * \brief   Collection of static helper functions.
+ *
+ * \author  Hunstock
+ * \date    23.07.2015
+ */
+
+using System;
 using System.Linq;
 using System.Reflection;
 
 using atbApi.data;
 
+/*! 
+ * \brief   namespace for only local (dll internal) used classes and structures
+ * 
+ */
 namespace local
 {
     internal static class Tools

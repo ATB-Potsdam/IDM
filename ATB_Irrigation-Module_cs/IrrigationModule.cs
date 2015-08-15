@@ -1,5 +1,7 @@
 ﻿/*!
- * An irrigation module.
+ * \file    IrrigationModule.cs
+ *
+ * \brief   The irrigation module implementation.
  *
  * \author  Hunstock
  * \date    05.08.2015
@@ -16,11 +18,15 @@ using atbApi.data;
 using local;
 
 /*! 
- * \brief   namespace for all export classes
+ * \brief   namespace for all exported classes and structures
  * 
  */
 namespace atbApi
 {
+    /*!
+     * \brief   Encapsulates the result of a transpiration calculation.
+     *
+     */
 
     public class TranspirationResult
     {
@@ -148,11 +154,29 @@ namespace atbApi
         public KcIniResult kcIniResult { get; set; }
     }
 
+    /*!
+     * \brief   The main functions of the irrigation module. Different types of calculation are provided.
+     *
+     */
 
     public class IrrigationModule
     {
+        /*!
+         * \brief   Transpiration calculation.
+         *
+         * \param   climate     The climate.
+         * \param   plant       The plant.
+         * \param   soil        The soil.
+         * \param   seedDate    The seed date.
+         * \param   harvestDate The harvest date.
+         *
+         * \return  A TranspirationResult class of values.
+         */
+
         public TranspirationResult transpirationCalc(
+            Climate climate,
             Plant plant,
+            Soil soil,
             DateTime seedDate,
             DateTime harvestDate
             )

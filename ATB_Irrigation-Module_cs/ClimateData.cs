@@ -2,6 +2,7 @@
 * \file		ClimateData.cs
 *
 * \brief	Class file for climate data types and access
+*
 * \author	Hunstock
 * \date	09.07.2015
 */
@@ -65,8 +66,8 @@ namespace atbApi
         }
 
         /*!
-         * \brief   Aggregated climate data for a calculation of a cropsequence: The data must begin at first
-         * seed date and must not end before last harvest date.
+         * \brief   Aggregated climate data for the calculation of a crop growing: The data must begin
+         * at seed date and must not end before harvest date.
          *
          */
 

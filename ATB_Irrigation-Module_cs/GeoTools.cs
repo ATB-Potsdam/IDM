@@ -1,9 +1,18 @@
-﻿using System;
+﻿/*!
+ * \file    GeoTools.cs
+ *
+ * \brief   Classes, structures and functions to work with geographic data.
+ *
+ * \author	Hunstock
+ * \date     11.08.2015
+ */
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace local
+namespace atbApi
 {
 
     /*!
