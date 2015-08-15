@@ -55,7 +55,7 @@ Public Class Form1
         Next
 
         Dim im = New atbApi.IrrigationModule()
-        TextBox1.AppendText(im.transpirationCalc(plant, Nothing, Nothing).ToString() + vbNewLine)
+        TextBox1.AppendText(im.transpirationCalc(Nothing, plant, Nothing, Nothing, Nothing).tAct.ToString() + vbNewLine)
 
 
     End Sub
