@@ -45,7 +45,10 @@ namespace atbApi
 
             protected void parseData(IDictionary<String, String> values, IDictionary<String, String> nameDict)
             {
-                foreach (PropertyInfo pi in this.GetType().GetProperties())
+                //use this for .net 4.0
+                //foreach (PropertyInfo pi in this.GetType().GetProperties())
+                //use this for .net 4.5
+                foreach (PropertyInfo pi in this.GetType().GetRuntimeProperties())
                 {
                     //if (pi.GetGetMethod() == null || pi.GetSetMethod() == null) continue;
 
@@ -66,7 +69,10 @@ namespace atbApi
                     {
                         pi.SetValue(this, Double.Parse(value, CultureInfo.InvariantCulture), null);
                     }
-                    else if (type.IsEnum)
+                    //use this for .net 4.0
+                    //else if (type.IsEnum)
+                    //use this for .net 4.5
+                    else if (type.GetTypeInfo().IsEnum)
                     {
                         try
                         {

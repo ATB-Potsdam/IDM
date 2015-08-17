@@ -17,8 +17,10 @@ namespace local
     {
         internal static Stream GetResourceStream(String resourceName)
         {
-            Assembly assembly = Assembly.GetExecutingAssembly();
-
+            //use this for .net 4.0
+            //Assembly assembly = Assembly.GetExecutingAssembly(); 
+            //use this for .net 4.5
+            Assembly assembly = typeof(atbApi.IrrigationModule).GetTypeInfo().Assembly; 
             return assembly.GetManifestResourceStream(resourceName);
         }
     }

@@ -33,7 +33,10 @@ namespace local
 
             Type t = typeof(T);
 
-            var properties = t.GetProperties().Where(prop => prop.CanRead && prop.CanWrite);
+            //use this for .net 4.0
+            //var properties = t.GetProperties().Where(prop => prop.CanRead && prop.CanWrite);
+            //use this for .net 4.5
+            var properties = t.GetRuntimeProperties().Where(prop => prop.CanRead && prop.CanWrite);
 
             foreach (var prop in properties)
             {

@@ -47,6 +47,8 @@ namespace local
             if (stream.EndOfStream) return null;
 
             IEnumerable<String> fields = parseLine();
+            if (fields == null) return null;
+
             return fieldNames.Zip(fields, (k, v) => new { k, v })
               .ToDictionary(x => x.k, x => x.v);
         }
@@ -70,7 +72,10 @@ namespace local
 
         private IEnumerable<String> parseLine()
         {
-            IList<String> fields = stream.ReadLine().Split(';');
+            String line = stream.ReadLine();
+            if (line.Length < 4 || line[0] == '#') return null;
+
+            IList<String> fields = line.Split(';');
             IList<String> result = new List<String>();
             bool inString = false;
             foreach (String field in fields)

@@ -28,6 +28,19 @@ namespace atbApi
         public double lat;
         /*! altitude in meter above sea level, optional, may be null */
         public Double? alt;
-    }
 
+        public Location(Double lon, Double lat)
+        {
+            this.lon = lon;
+            this.lat = lat;
+            this.alt = null;
+        }
+
+        public Location(Double lon, Double lat, Double alt)
+        {
+            this.lon = lon;
+            this.lat = lat;
+            this.alt = alt;
+        }
+    }
 }

@@ -83,4 +83,19 @@ Public Class Form1
             Next
         Next
     End Sub
+
+    Private Sub Button4_Click(sender As Object, e As EventArgs) Handles Button4.Click
+        Dim climate As atbApi.data.Climate = New atbApi.data.Climate(atbApi.data.TimeStep.day)
+        Dim fs As System.IO.FileStream = New IO.FileStream("C:\IWRM_MIKE-Basin_Irrigation-Module\testdata\climate.public_service.date_2012-04-12T00_00_00.000Z.csv", IO.FileMode.Open)
+        climate.loadFromFileStream(fs)
+        fs.Close()
+        TextBox1.AppendText(climate.name + " start:" + climate.start + " end:" + climate.end + vbNewLine)
+    End Sub
+
+    Private Async Sub Button5_Click(sender As Object, e As EventArgs) Handles Button5.Click
+        Dim climate As atbApi.data.Climate = New atbApi.data.Climate(atbApi.data.TimeStep.day)
+        Dim count As Integer = Await climate.loadFromATBWebService(New atbApi.Location(52.34, 10.3), New DateTime(2012, 1, 1, 0, 0, 0, DateTimeKind.Utc), New DateTime(2012, 12, 31, 0, 0, 0, DateTimeKind.Utc))
+
+        TextBox1.AppendText(climate.name + " start:" + climate.start + " end:" + climate.end + vbNewLine)
+    End Sub
 End Class
