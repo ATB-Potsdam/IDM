@@ -154,6 +154,5 @@ Public Class Form1
         TextBox1.AppendText("et0:" + transpirationResult.et0.ToString() + " runtimeMs:" + transpirationResult.runtimeMs.ToString("F3") + vbNewLine)
         'keep this for next calculation on this field
         Dim nextSoilConditions As atbApi.data.SoilConditionsDual = transpirationResult.lastConditions
-        atbApi.
     End Sub
 End Class

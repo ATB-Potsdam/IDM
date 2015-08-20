@@ -1,4 +1,16 @@
-﻿using System;
+﻿/*!
+ * \file    WebApiRequest.cs
+ *
+ * \brief   Static class with functions to load data from Sponge-JS webservice.
+ *          Implemented for testing and validating purpose.
+ *          The webservice is maintained by ATB, username and password are required
+ *
+ * \author  Hunstock
+ * \date    19.08.2015
+ */
+
+
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Net;
