@@ -20,7 +20,7 @@ namespace local
             //use this for .net 4.0
             //Assembly assembly = Assembly.GetExecutingAssembly(); 
             //use this for .net 4.5
-            Assembly assembly = typeof(atbApi.IrrigationModule).GetTypeInfo().Assembly; 
+            Assembly assembly = typeof(atbApi.Transpiration).GetTypeInfo().Assembly; 
             return assembly.GetManifestResourceStream(resourceName);
         }
     }

@@ -150,9 +150,10 @@ Public Class Form1
         Dim seedDate As DateTime = New DateTime(2012, 4, 12, 0, 0, 0, DateTimeKind.Utc)
         Dim harvestDate As DateTime = New DateTime(2012, 10, 5, 0, 0, 0, DateTimeKind.Utc)
         'start calculation
-        Dim transpirationResult As atbApi.TranspirationResult = atbApi.IrrigationModule.TranspirationCalc(climate, plant, soil, Nothing, location, seedDate, harvestDate, soilConditions, False)
+        Dim transpirationResult As atbApi.TranspirationResult = atbApi.Transpiration.TranspirationCalc(climate, plant, soil, Nothing, location, seedDate, harvestDate, soilConditions, False)
         TextBox1.AppendText("et0:" + transpirationResult.et0.ToString() + " runtimeMs:" + transpirationResult.runtimeMs.ToString("F3") + vbNewLine)
         'keep this for next calculation on this field
         Dim nextSoilConditions As atbApi.data.SoilConditionsDual = transpirationResult.lastConditions
+        atbApi.
     End Sub
 End Class
