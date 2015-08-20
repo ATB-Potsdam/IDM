@@ -49,7 +49,7 @@
     <OptionInfer>On</OptionInfer>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ATB_Irrigation-Module_cs, Version=1.0.6.285, Culture=neutral, PublicKeyToken=dae1181000c11aa9, processorArchitecture=MSIL">
+    <Reference Include="ATB_Irrigation-Module_cs, Version=1.0.7.366, Culture=neutral, PublicKeyToken=dae1181000c11aa9, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\ATB_Irrigation-Module_cs\bin\Debug\ATB_Irrigation-Module_cs.dll</HintPath>
     </Reference>

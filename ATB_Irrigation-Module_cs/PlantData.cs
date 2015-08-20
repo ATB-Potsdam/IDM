@@ -319,6 +319,8 @@ namespace atbApi
 
             public PlantValues getValues(int day)
             {
+                if (plantData == null) return null;
+
                 PlantValues resultSet;
                 bool hasSet= plantData.TryGetValue(day, out resultSet);
                 if (hasSet) return resultSet;

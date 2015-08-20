@@ -11,12 +11,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Globalization;
-using System.Text;
 using System.IO;
-using System.Reflection;
 
 using local;
-using System.Net;
 
 namespace atbApi
 {
@@ -90,7 +87,6 @@ namespace atbApi
             private TimeStep _step;
             private DateTime? _start;
             private DateTime? _end;
-            private const String SpongeJsUrl = "https://agrohyd-api.runlevel3.de/ParameterSetData/getByTagTypeLocation/{0}/climate/{1}/{2}/date%3A{3}?end=date%3A{4}&step=date%3A{5}&format=csv";
 
             /*!
              * \brief   public readonly property to access the name
@@ -145,6 +141,7 @@ namespace atbApi
             {
                 try
                 {
+                    _e = null;
                     CsvReader csvReader = new CsvReader(stream);
 
                     while (!csvReader.EndOfStream())
@@ -183,13 +180,17 @@ namespace atbApi
 
             public int loadFromFileStream(Stream climateFileStream)
             {
-                _e = null;
                 return loadCsv(climateFileStream);
             }
 
             public async Task<int> loadFromATBWebService(Location location, DateTime start, DateTime end)
             {
-                return await loadFromATBWebService(location, "public_service", "irri_mod_user", "irri_mod_pass", start, end);
+                return loadCsv(await WebApiRequest.LoadFromATBWebService(location, start, end, this._step));
+            }
+
+            public async Task<int> loadFromATBWebService(Location location, String tag, DateTime start, DateTime end)
+            {
+                return loadCsv(await WebApiRequest.LoadFromATBWebService(location, tag, start, end, this._step));
             }
 
             /*!
@@ -207,27 +208,17 @@ namespace atbApi
 
             public async Task<int> loadFromATBWebService(Location location, String tag, String user, String pass, DateTime start, DateTime end)
             {
-                String url = String.Format(SpongeJsUrl,
-                    tag,
-                    location.lon.ToString(CultureInfo.InvariantCulture),
-                    location.lat.ToString(CultureInfo.InvariantCulture),
-                    start.ToUniversalTime().ToString("s") + "Z",
-                    end.ToUniversalTime().ToString("s") + "Z",
-                    "day"
-                    );
-                HttpWebRequest req = (HttpWebRequest)WebRequest.Create(url);
-                req.Credentials = new NetworkCredential(user, pass);
-                try
-                {
-                    _e = null;
-                    WebResponse res = await Task<WebResponse>.Factory.FromAsync(req.BeginGetResponse, req.EndGetResponse, req);
-                    return loadCsv(res.GetResponseStream());
-                }
-                catch (Exception e)
-                {
-                    _e = e;
-                    return 0;
-                }
+                return loadCsv(await WebApiRequest.LoadFromATBWebService(location, tag, user, pass, start, end, this._step));
+            }
+
+            public async Task<double> loadAltitudeFromATBWebService(Location location)
+            {
+                return await WebApiRequest.LoadAltitudeFromATBWebService(location);
+            }
+
+            public async Task<double> loadAltitudeFromATBWebService(Location location, String user, String pass)
+            {
+                return await WebApiRequest.LoadAltitudeFromATBWebService(location, user, pass);
             }
 
 
@@ -241,7 +232,7 @@ namespace atbApi
 
             public int addValues(DateTime date, ClimateValues values)
             {
-                climateData.Add(Tools.AdjustTimeStep(date, step), values);
+                climateData[Tools.AdjustTimeStep(date, step)] = values;
                 return climateData.Count;
             }
 
@@ -254,27 +245,13 @@ namespace atbApi
              * \return  The values if available for requested date, else null is returned.
              */
 
-            public ClimateValues getValues(DateTime date, TimeStep wantStep)
+            public ClimateValues getValues(DateTime date)
             {
-                if (wantStep <= step)
-                {
-                    ClimateValues resultSet;
-                    climateData.TryGetValue(Tools.AdjustTimeStep(date, step), out resultSet);
-                    return resultSet;
-                }
-                else if (wantStep == TimeStep.day && step == TimeStep.hour)
-                {
+                if (climateData == null) return null;
 
-                }
-                else if (wantStep == TimeStep.month && step == TimeStep.hour)
-                {
-
-                }
-                else if (wantStep == TimeStep.month && step == TimeStep.day)
-                {
-
-                }
-                return null;
+                ClimateValues resultSet;
+                climateData.TryGetValue(Tools.AdjustTimeStep(date, step), out resultSet);
+                return resultSet;
             }
         }
     }

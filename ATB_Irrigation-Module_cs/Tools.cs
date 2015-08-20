@@ -10,6 +10,8 @@
 using System;
 using System.Linq;
 using System.Reflection;
+using System.Collections.Generic;
+
 
 using atbApi.data;
 
@@ -60,6 +62,27 @@ namespace local
                     return new DateTime(date.Year, date.Month, 1, 0, 0, 0, 0, date.Kind);
             }
             return date;
+        }
+
+        internal static IEnumerable<DateTime> EachHour(DateTime start, DateTime end)
+        {
+            for (var date = start; date <= end; date = date.AddHours(1))
+                yield return date;
+        }
+        internal static IEnumerable<DateTime> EachDay(DateTime start, DateTime end)
+        {
+            for (var date = start; date <= end; date = date.AddDays(1))
+                yield return date;
+        }
+        internal static IEnumerable<DateTime> EachMonth(DateTime start, DateTime end)
+        {
+            for (var date = start; date <= end; date = date.AddMonths(1))
+                yield return date;
+        }
+        internal static IEnumerable<DateTime> EachYear(DateTime start, DateTime end)
+        {
+            for (var date = start; date <= end; date = date.AddYears(1))
+                yield return date;
         }
     }
 }

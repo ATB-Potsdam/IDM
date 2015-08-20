@@ -31,6 +31,8 @@ Partial Class Form1
         Me.ComboBox3 = New System.Windows.Forms.ComboBox()
         Me.Button4 = New System.Windows.Forms.Button()
         Me.Button5 = New System.Windows.Forms.Button()
+        Me.Button6 = New System.Windows.Forms.Button()
+        Me.Button7 = New System.Windows.Forms.Button()
         Me.SuspendLayout()
         '
         'Button1
@@ -70,7 +72,7 @@ Partial Class Form1
         '
         'Button3
         '
-        Me.Button3.Location = New System.Drawing.Point(334, 63)
+        Me.Button3.Location = New System.Drawing.Point(334, 61)
         Me.Button3.Name = "Button3"
         Me.Button3.Size = New System.Drawing.Size(131, 23)
         Me.Button3.TabIndex = 4
@@ -88,14 +90,14 @@ Partial Class Form1
         'ComboBox3
         '
         Me.ComboBox3.FormattingEnabled = True
-        Me.ComboBox3.Location = New System.Drawing.Point(25, 112)
+        Me.ComboBox3.Location = New System.Drawing.Point(25, 110)
         Me.ComboBox3.Name = "ComboBox3"
         Me.ComboBox3.Size = New System.Drawing.Size(303, 21)
         Me.ComboBox3.TabIndex = 6
         '
         'Button4
         '
-        Me.Button4.Location = New System.Drawing.Point(334, 112)
+        Me.Button4.Location = New System.Drawing.Point(334, 108)
         Me.Button4.Name = "Button4"
         Me.Button4.Size = New System.Drawing.Size(131, 23)
         Me.Button4.TabIndex = 7
@@ -111,11 +113,31 @@ Partial Class Form1
         Me.Button5.Text = "Climate from http"
         Me.Button5.UseVisualStyleBackColor = True
         '
+        'Button6
+        '
+        Me.Button6.Location = New System.Drawing.Point(611, 112)
+        Me.Button6.Name = "Button6"
+        Me.Button6.Size = New System.Drawing.Size(131, 23)
+        Me.Button6.TabIndex = 9
+        Me.Button6.Text = "ET0 from http"
+        Me.Button6.UseVisualStyleBackColor = True
+        '
+        'Button7
+        '
+        Me.Button7.Location = New System.Drawing.Point(334, 158)
+        Me.Button7.Name = "Button7"
+        Me.Button7.Size = New System.Drawing.Size(131, 23)
+        Me.Button7.TabIndex = 10
+        Me.Button7.Text = "transpiration calc"
+        Me.Button7.UseVisualStyleBackColor = True
+        '
         'Form1
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(834, 470)
+        Me.Controls.Add(Me.Button7)
+        Me.Controls.Add(Me.Button6)
         Me.Controls.Add(Me.Button5)
         Me.Controls.Add(Me.Button4)
         Me.Controls.Add(Me.ComboBox3)
@@ -140,5 +162,7 @@ End Sub
     Friend WithEvents ComboBox3 As System.Windows.Forms.ComboBox
     Friend WithEvents Button4 As System.Windows.Forms.Button
     Friend WithEvents Button5 As System.Windows.Forms.Button
+    Friend WithEvents Button6 As System.Windows.Forms.Button
+    Friend WithEvents Button7 As System.Windows.Forms.Button
 
 End Class

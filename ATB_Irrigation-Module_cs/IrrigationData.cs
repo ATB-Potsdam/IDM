@@ -78,21 +78,25 @@ namespace atbApi
 
         public class IrrigationSchedule
         {
-            /*!
-             * \brief   Irrigation schedule as HashMap of Dates and irrigation amounts
-             *
-             */
-
+            /*! Irrigation schedule as HashMap of Dates and irrigation amounts */
             public IDictionary<DateTime, double> schedule { get; set; }
+            /*! Type of irrigation method */
+            public IrrigationType irrigationType { get; set; }
 
             /*!
-             * Default constructor, an empty schedule is created.
+             * \brief   Default constructor, an empty schedule is created, irrgationType defaults to "sprinkler"
              *
              */
 
             public IrrigationSchedule()
+                : this(IrrigationTypes.sprinkler)
+            {
+            }
+
+            public IrrigationSchedule(IrrigationType irrigationType)
             {
                 this.schedule = new Dictionary<DateTime, double>();
+                this.irrigationType = irrigationType;
             }
         }
     }

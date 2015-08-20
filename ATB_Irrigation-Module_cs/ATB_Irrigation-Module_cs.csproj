@@ -47,6 +47,7 @@
   <ItemGroup>
     <Compile Include="BaseValues.cs" />
     <Compile Include="IrrigationData.cs" />
+    <Compile Include="Et0.cs" />
     <Compile Include="KcIni.cs" />
     <Compile Include="ClimateData.cs" />
     <Compile Include="CsvReader.cs" />
@@ -59,6 +60,7 @@
     <Compile Include="Range.cs" />
     <Compile Include="ResourceStream.cs" />
     <Compile Include="version.cs" />
+    <Compile Include="WebApiRequest.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IWRM_ATB-PlantData.csv.gz" />

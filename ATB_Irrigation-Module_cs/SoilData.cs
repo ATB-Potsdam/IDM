@@ -23,22 +23,33 @@ namespace atbApi
          *
          */
 
-        public struct SoilConditions
+        public class SoilConditions
         {
             /*! drainage in the root zone */
-            public double drRz;
+            public double drRz { get; set; }
             /*! totally available water in the root zone */
-            public double tawRz;
+            public Double? tawRz { get; set; }
             /*! drainage in the deep zone (below root zone up to 2m depth) */
-            public double drDz;
+            public double drDz { get; set; }
             /*! totally available water in the deep zone (below root zone up to 2m depth) */
-            public double tawDz;
+            public Double? tawDz { get; set; }
             /*! drainage in the evaporation layer */
-            public double de;
+            public double de { get; set; }
             /*! percolation from the evaporation layer */
-            public double dpe;
+            public Double? dpe { get; set; }
             /*! rooting depth of the crop */
-            public double zr;
+            public double zr { get; set; }
+
+            public SoilConditions()
+            {
+                drRz = 0.1;
+                drDz = 0.1;
+                de = 0.1;
+                dpe = null;
+                zr = 0.3;
+                tawRz = null;
+                tawDz = null;
+            }
         }
 
         /*!
@@ -47,12 +58,18 @@ namespace atbApi
          *
          */
 
-        public struct SoilConditionsDual
+        public class SoilConditionsDual
         {
             /*! conditions for evaporation + transpiration calculation */
-            public SoilConditions e;
+            public SoilConditions e { get; set; }
             /*! conditions for evapotranspiration calculation */
-            public SoilConditions et;
+            public SoilConditions et { get; set; }
+            
+            public SoilConditionsDual()
+            {
+                e = new SoilConditions();
+                et = new SoilConditions();
+            }
         }
 
         /*!
@@ -275,6 +292,8 @@ namespace atbApi
 
             public SoilValues getValues(Double z)
             {
+                if (soilData == null) return null;
+
                 SoilValues resultSet;
                 Double _z = Math.Round(z, 2);
                 bool hasSet = soilData.TryGetValue(z, out resultSet);
