@@ -83,6 +83,8 @@ namespace atbApi
             public double Qfc { get; set; }
             /*! wilting point [m³/m³] or unitless */
             public double Qwp { get; set; }
+            /*! depth of evaporation layer [m] */
+            public double Ze { get; set; }
             /*! humus content [%] */
             public double humus { get; set; }
 
