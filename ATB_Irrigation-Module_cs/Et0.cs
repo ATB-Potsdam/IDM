@@ -266,7 +266,8 @@ namespace atbApi
             if (ct == null) ct = 17.8;
             if (ch == null) ch = 0.0023;
             if (eh == null) eh = 0.5;
-            var et0 = (double)ch * ra * Math.Pow(((double)climateSet.max_temp - (double)climateSet.min_temp), (double)eh) * (((double)climateSet.max_temp + (double)climateSet.min_temp) / 2 + (double)ct);
+            var lambda = 2.5 - 0.002361 * ((double)climateSet.max_temp + (double)climateSet.min_temp) / 2;
+            var et0 = (double)ch * ra * Math.Pow(((double)climateSet.max_temp - (double)climateSet.min_temp), (double)eh) * (((double)climateSet.max_temp + (double)climateSet.min_temp) / 2 + (double)ct) / (double)lambda;
 
             return new Et0Result(ra, et0);
         }
