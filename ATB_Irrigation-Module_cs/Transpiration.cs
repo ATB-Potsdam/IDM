@@ -315,23 +315,27 @@ namespace atbApi
             Double? ch,
             Double? eh,
             bool autoIrr,
-            Double? autoIrrLevel,
-            Double? autoIrrCutoff,
-            Double? autoIrrAmount,
+            Double? _autoIrrLevel,
+            Double? _autoIrrCutoff,
+            Double? _autoIrrAmount,
             IrrigationType autoIrrType,
             Int32? autoIrrStartDay,
             Int32? autoIrrEndDay,
-            Double? eFactor
+            Double? _eFactor
         )
         {
-            var result = new TranspirationResult();
             var profileStart = DateTime.Now;
+            var result = new TranspirationResult();
 
             //plausibility checks
             if (start < seedDate) start = seedDate;
             if (end > harvestDate) end = harvestDate;
             if (seedDate >= harvestDate) return result;
 
+            //fill variables
+            var autoIrrLevel = _autoIrrLevel != null ? (double)_autoIrrLevel : 0.8;
+            var autoIrrCutoff = _autoIrrCutoff != null ? (double)_autoIrrCutoff : 0.9;
+            var autoIrrAmount = _autoIrrAmount != null ? (double)_autoIrrAmount : 2;
             var maxDepth= 1.999999999999;
             var interval= (Int32)(harvestDate - seedDate).TotalDays;
             var stageTotal= plant.stageTotal;
@@ -349,7 +353,7 @@ namespace atbApi
                 var plantSet = plant.getValues(plantDay);
                 var soilSet = soil.getValues(Math.Min(initialConditions.et.zr, maxDepth));
                 var soilSetMax = soil.getValues(maxDepth);
-                var et0 = Et0.Et0Calc(climate, loopDate, location);
+                var et0 = Et0.Et0Calc(climate, loopDate, location, _as, _bs, ct, ch, eh);
 
                 var irrigation= 0.0;
                 var netIrrigation= 0.0;
@@ -366,9 +370,9 @@ namespace atbApi
                 var netPrecipitation= 0.0;
 
                 //common calculations for Tc and ETc
-                plantSet.Zr= Math.Min(maxDepth, (double)plantSet.Zr);
+                var zr= Math.Min(maxDepth, (double)plantSet.Zr);
                 //taw in root zone
-                var tawRz= 1000 * (soilSet.Qfc - soilSet.Qwp) * plantSet.Zr;
+                var tawRz= 1000 * (soilSet.Qfc - soilSet.Qwp) * zr;
                 var tawMax= 1000 * (soilSetMax.Qfc - soilSetMax.Qwp) * maxDepth;
                 //taw in deep zone
                 var tawDz= tawMax - tawRz;
@@ -408,7 +412,7 @@ namespace atbApi
                     if (soilSaturationEtc < autoIrrLevel) {
                         autoNetIrrigationEtc= autoIrrAmount;
                         autoNetIrrigationEtc= autoIrrigationEtc * autoIrrigationFw;
-                        if (autoIrrAmount === 0) {
+                        if (autoIrrAmount == 0) {
                             //automatic irrigate with drainage of last day multiplied by interval if no amount is given
                             //autoIrrigation= etSum * (autoIrrInterval);
                             //new: irrigate to given saturation
@@ -550,9 +554,9 @@ namespace atbApi
                         }
 
                         //moved border rootZone -> adjust drainage
-                        if (data.plantSet.Zr != lastConditions.zr) {
+                        if (use zr!!!data.plantSet.Zr != lastConditions.zr) {
                             var dzDepth= maxDepth -  lastConditions.zr;
-                            var zDiff= data.plantSet.Zr - lastConditions.zr;
+                            var zDiff= use zr!!!data.plantSet.Zr - lastConditions.zr;
                             var drDiff= zDiff * lastConditions.drDz / dzDepth;
                             lastConditions.drRz += drDiff;
                             lastConditions.drDz -= drDiff;
@@ -619,7 +623,7 @@ namespace atbApi
                         lastConditions.tawRz= tawRz;
                         lastConditions.drDz= drDz;
                         lastConditions.tawDz= tawDz;
-                        lastConditions.zr= data.plantSet.Zr;
+                        lastConditions.zr= use zr!!!data.plantSet.Zr;
 
                         loopResult.tawRz= tawRz;
                         loopResult.tawDz= tawDz;
@@ -688,7 +692,7 @@ namespace atbApi
                             management: managementLib,
                             //geaendert am 15.9.2014
                             //ze: ze,
-                            ze: data.plantSet.Zr,
+                            ze: use zr!!!data.plantSet.Zr,
                             depletionDeInitial: args.depletionDeInitial !== undefined ? args.depletionDeInitial : args.depletionRzInitial !== undefined ? args.depletionRzInitial : 0.1,
                             autoIrr: data.plantSet.isFallow ? false : autoIrr,
                             autoIrrLevel: autoIrrLevel,
@@ -737,7 +741,7 @@ namespace atbApi
                             debugValues.push({
                                 loopDate: loopDate,
                                 plantDay: plantDay,
-                                plantZr: data.plantSet.Zr,
+                                plantZr: use zr!!!data.plantSet.Zr,
                                 et0: data.et0.et0,
                                 precipitation: data.climateSet.precipitation,
                                 irrigation: irrigation,
@@ -805,7 +809,7 @@ namespace atbApi
 
                     loopResult.loopDate= loopDate;
                     loopResult.plantDay= plantDay;
-                    loopResult.plantZr= data.plantSet.Zr;
+                    loopResult.plantZr= use zr!!!data.plantSet.Zr;
                     loopResult.plantStage= data.plantSet.name;
                     loopResult.et0= data.et0.et0;
                     loopResult.precipitation= data.climateSet.precipitation;
