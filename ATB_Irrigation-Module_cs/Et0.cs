@@ -27,7 +27,7 @@ namespace atbApi
 
     public class Et0Result
     {
-        /*! , unit: "mm", description: Calculated ET0 value. */
+        /*! , unit: "MJ m-² day-¹", description: Calculated extraterrestrial radiation. */
         public double ra { get; set; }
         /*! , unit: "mm", description: Calculated ET0 value. */
         public double et0 { get; set; }

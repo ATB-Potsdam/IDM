@@ -42,6 +42,7 @@ namespace atbApi
             late_season = 0x5,
         };
 
+
         /*!
         * \brief	defines a collection of plant parameters.
         *
@@ -106,7 +107,8 @@ namespace atbApi
             private ICollection<String> names = new HashSet<String>();
             private IDictionary<String, IDictionary<int, PlantValues>> plantData = new Dictionary<String, IDictionary<int, PlantValues>>();
             private IDictionary<String, int> plantStagesLength = new Dictionary<String, int>();
-            private IDictionary<String, int> initialLength = new Dictionary<String, int>();
+            private IDictionary<String, int> initialEnd = new Dictionary<String, int>();
+            private IDictionary<String, int> developmentEnd = new Dictionary<String, int>();
 
             /*!
              * \brief   Constructor to load external csv-File as plant database.
@@ -142,7 +144,7 @@ namespace atbApi
                     {
                         plantData.Add(name, new Dictionary<int, PlantValues>());
                         plantStagesLength.Add(name, 0);
-                        initialLength.Add(name, 0);
+                        initialEnd.Add(name, 0);
                     }
                     IDictionary<int, PlantValues> plantValues = plantData[name];
                     PlantValues values = new PlantValues();
@@ -152,14 +154,26 @@ namespace atbApi
                     plantStagesLength[name] = Math.Max(plantStagesLength[name], _iterator);
                     if (values.stage.Equals(PlantStage.initial))
                     {
-                        initialLength[name] = Math.Max(initialLength[name], _iterator);
+                        if (!initialEnd.ContainsKey(name)) initialEnd[name] = 0;
+                        initialEnd[name] = Math.Max(initialEnd[name], _iterator);
+                    }
+                    if (values.stage.Equals(PlantStage.development))
+                    {
+                        if (!developmentEnd.ContainsKey(name)) developmentEnd[name] = 0;
+                        developmentEnd[name] = Math.Max(developmentEnd[name], _iterator);
                     }
                 }
             }
 
-            internal int getInitialLength(String name)
+            internal int getInitialEnd(String name)
             {
-                if (initialLength.ContainsKey(name)) return initialLength[name];
+                if (initialEnd.ContainsKey(name)) return initialEnd[name];
+                return 0;
+            }
+
+            internal int getDevelopmentEnd(String name)
+            {
+                if (developmentEnd.ContainsKey(name)) return developmentEnd[name];
                 return 0;
             }
 
@@ -239,7 +253,8 @@ namespace atbApi
         {
             private String _name;
             private int _stageTotal;
-            private int initialLength;
+            private int _initialEnd;
+            private int _developmentEnd;
             private IDictionary<int, PlantValues> plantData;
 
             /*!
@@ -249,6 +264,22 @@ namespace atbApi
              */
 
             public String name { get { return this._name; } }
+
+            /*!
+             * \brief   public readonly property to access initialLength.
+             *
+             * \return  The initialLength, the number of days in initial plant stage
+             */
+
+            public int initialEnd { get { return this._initialEnd; } }
+
+            /*!
+             * \brief   public readonly property to access developmentLength.
+             *
+             * \return  The idevelopmentLength, the number of days in development plant stage
+             */
+
+            public int developmentEnd { get { return this._developmentEnd; } }
 
             /*!
              * \brief   public readonly property to access stageTotal.
@@ -279,7 +310,8 @@ namespace atbApi
                 this._name = name;
                 this.plantData = LocalPlantDb.Instance.getPlantData(_name);
                 this._stageTotal = LocalPlantDb.Instance.getStageTotal(_name);
-                this.initialLength = LocalPlantDb.Instance.getInitialLength(_name);
+                this._initialEnd = LocalPlantDb.Instance.getInitialEnd(_name);
+                this._developmentEnd = LocalPlantDb.Instance.getDevelopmentEnd(_name);
             }
 
             /*!
@@ -306,7 +338,29 @@ namespace atbApi
                 this._name = name;
                 this.plantData = plantDb.getPlantData(_name);
                 this._stageTotal = plantDb.getStageTotal(_name);
-                this.initialLength = plantDb.getInitialLength(_name);
+                this._initialEnd = plantDb.getInitialEnd(_name);
+                this._developmentEnd = plantDb.getDevelopmentEnd(_name);
+            }
+
+            internal Int32? getPlantDay(DateTime date, DateTime seedDate, DateTime harvestDate)
+            {
+                //return null if harvestDate is before or equal to seedDate or date not between seedDate and harvestDate
+                if (DateTime.Compare(seedDate, harvestDate) >= 0) return null;
+                if (DateTime.Compare(date, harvestDate) > 0) return null;
+                if (DateTime.Compare(date, seedDate) < 0) return null;
+
+                //build rounded dates to calculate with full days
+                DateTime _date = new DateTime(seedDate.Year, seedDate.Month, seedDate.Day, 0, 0, 0);
+                DateTime _seedDate = new DateTime(seedDate.Year, seedDate.Month, seedDate.Day, 0, 0, 0);
+                DateTime _harvestDate = new DateTime(harvestDate.Year, harvestDate.Month, harvestDate.Day, 0, 0, 0);
+
+                var interval = (_harvestDate - _seedDate).TotalDays;
+
+                int day = (int)Math.Round((_date - _seedDate).TotalDays * (stageTotal / interval));
+                if (day < 1) day = 1;
+                if (day > stageTotal) day = stageTotal;
+
+                return day;
             }
 
             /*!
@@ -317,13 +371,16 @@ namespace atbApi
              * \return  The values if available for requested development day, else null is returned.
              */
 
-            public PlantValues getValues(int day)
+            public PlantValues getValues(Int32? day)
             {
                 if (plantData == null) return null;
 
                 PlantValues resultSet;
-                bool hasSet= plantData.TryGetValue(day, out resultSet);
-                if (hasSet) return resultSet;
+                if (day != null)
+                {
+                    bool hasSet = plantData.TryGetValue((int)day, out resultSet);
+                    if (hasSet) return resultSet;
+                }
                 //try to get default set for average plants with only default set
                 plantData.TryGetValue(0, out resultSet);
                 return resultSet;
@@ -348,24 +405,9 @@ namespace atbApi
 
             public PlantValues getValues(DateTime date, DateTime seedDate, DateTime harvestDate)
             {
-                //return null if harvestDate is before or equal to seedDate or date not between seedDate and harvestDate
-                if (DateTime.Compare(seedDate, harvestDate) >= 0) return null;
-                if (DateTime.Compare(date, harvestDate) > 0) return null;
-                if (DateTime.Compare(date, seedDate) < 0) return null;
-
-                //build rounded dates to calculate with full days
-                DateTime _date = new DateTime(seedDate.Year, seedDate.Month, seedDate.Day, 0, 0, 0);
-                DateTime _seedDate = new DateTime(seedDate.Year, seedDate.Month, seedDate.Day, 0, 0, 0);
-                DateTime _harvestDate = new DateTime(harvestDate.Year, harvestDate.Month, harvestDate.Day, 0, 0, 0);
-
-                var interval = (harvestDate - seedDate).TotalDays;
-                
-                int day = Convert.ToInt32(((date - seedDate).TotalDays) * (stageTotal / interval));
-                if (day < 1) day = 1;
-                if (day > stageTotal) day = stageTotal;       
-
-                return this.getValues(day);
+                return this.getValues(getPlantDay(date, seedDate, harvestDate));
             }
+
         }
     }
 }

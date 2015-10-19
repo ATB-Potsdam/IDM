@@ -115,6 +115,7 @@ namespace atbApi
 
         public static KcIniResult KcIniCalc(
             Climate climate,
+            Plant plant,
             Soil soil,
             IrrigationSchedule irrigation,
             DateTime startDate,
@@ -127,12 +128,15 @@ namespace atbApi
             double autoIrrCutoff,
             double autoIrrAmount,
             IrrigationType autoIrrType,
-            int autoIrrStartDay,
-            int autoIrrEndDay,
+            Int32? autoIrrStartDay,
+            Int32? autoIrrEndDay,
             double eFactor
         )
         {
             KcIniResult result = new KcIniResult();
+
+
+
             result.kcIni = 0.8;
             return result;
         }
