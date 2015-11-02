@@ -18,6 +18,7 @@ namespace atbApi
 {
     namespace data
     {
+
         /*!
          * \brief   Soil values to track for continuous calculation without gap in the water balance.
          *
@@ -42,13 +43,47 @@ namespace atbApi
 
             public SoilConditions()
             {
-                drRz = 0.1;
-                drDz = 0.1;
-                de = 0.1;
+                drRz = 0.0;
+                drDz = 0.0;
+                de = 0.0;
                 dpe = null;
                 zr = 0.3;
                 tawRz = null;
                 tawDz = null;
+            }
+
+            public SoilConditions(double drRz, double drDz, double de, Double? dpe, double zr, Double? tawRz, Double? tawDz)
+            {
+                this.drRz = drRz;
+                this.drDz = drDz;
+                this.de = de;
+                this.dpe = dpe;
+                this.zr = zr;
+                this.tawRz = tawRz;
+                this.tawDz = tawDz;
+            }
+
+            public SoilConditions(Soil soil, Double? zr, Double? depletionRz, Double? depletionDz, Double? depletionDe)
+            {
+                //hardcoded default values if values are ommitted in constructor
+                var zrInitial = 0.3;
+                var depletionRzInitial = 0.1;
+                var depletionDzInitial = 0.1;
+                var depletionDeInitial = 0.1;
+                var zeInitial = 0.1;
+
+                this.zr = zr != null ? (double)zr : zrInitial;
+                this.zr = Math.Max(0, Math.Min(soil.maxDepth, this.zr));
+                var soilSetStart = soil.getValues(this.zr);
+                var soilSetMax = soil.getValues(soil.maxDepth);
+                tawRz= 1000 * (soilSetStart.Qfc - soilSetStart.Qwp) * zr;
+                var tawMax= 1000 * (soilSetMax.Qfc - soilSetMax.Qwp) * soil.maxDepth;
+                tawDz= tawMax - tawRz;
+                var ze= soilSetStart.Ze != null ? (double)soilSetStart.Ze : zeInitial;
+
+                drRz = depletionRz != null ? (double)depletionRz * (double)tawRz : depletionRzInitial * (double)tawRz;
+                drDz = depletionDz != null ? (double)depletionDz * (double)tawDz : depletionDzInitial * (double)tawDz;
+                de = depletionDe != null ? (double)depletionDe * (double)tawRz * (ze / zrInitial) : depletionDeInitial * (double)tawRz * (ze / zrInitial);
             }
         }
 
@@ -64,14 +99,125 @@ namespace atbApi
             public SoilConditions e { get; set; }
             /*! conditions for evapotranspiration calculation */
             public SoilConditions et { get; set; }
-            
+
             public SoilConditionsDual()
             {
                 e = new SoilConditions();
                 et = new SoilConditions();
             }
+
+            public SoilConditionsDual(double drRz, double drDz, double de, Double? dpe, double zr, Double? tawRz, Double? tawDz)
+            {
+                e = new SoilConditions(drRz, drDz, de, dpe, zr, tawRz, tawDz);
+                et = new SoilConditions(drRz, drDz, 0.0, null, zr, tawRz, tawDz);
+            }
+
+            public SoilConditionsDual(Soil soil, Double? zr, Double? depletionRzInitial, Double? depletionDzInitial, Double? depletionDeInitial)
+            {
+                e = new SoilConditions(soil, zr, depletionRzInitial, depletionDzInitial, depletionDeInitial);
+                et = new SoilConditions(soil, zr, depletionRzInitial, depletionDzInitial, depletionDeInitial);
+            }
         }
 
+        internal class SoilConditionTools
+        {
+            //adjust drainage according to changed root depth
+            internal static void AdjustSoilConditionsZr(ref SoilConditions lastConditions, double tawRz, double tawDz, double zr, double maxDepth)
+            {
+                if (lastConditions.tawRz == null) lastConditions.tawRz = tawRz;
+                if (lastConditions.tawDz == null) lastConditions.tawDz = tawDz;
+                var drSum = lastConditions.drRz + lastConditions.drDz;
+
+                //catch special case root zone from max to 0
+                if (lastConditions.zr == maxDepth && zr == 0) {
+                    lastConditions.drRz= 0;
+                    lastConditions.drDz= lastConditions.drRz;
+                }
+                //catch special case root zone from 0 to max
+                else if (lastConditions.zr == 0 && zr == maxDepth) {
+                    lastConditions.drRz= lastConditions.drDz;
+                    lastConditions.drDz= 0;
+                }
+                //root zone shrinks -> add root drainage to deep zone
+                else if (zr < lastConditions.zr) {
+                    var tawRzRatio= ((double)lastConditions.tawRz / lastConditions.zr) / (tawRz / zr);
+                    var zrFactor= zr / lastConditions.zr;
+                    lastConditions.drRz= lastConditions.drRz * zrFactor / tawRzRatio;
+                    lastConditions.drDz= drSum - lastConditions.drRz;
+                }
+                //root zone grows -> add deep drainage to root zone
+                else {
+                    var tawDzRatio= ((double)lastConditions.tawDz / (maxDepth - lastConditions.zr)) / (tawDz / (maxDepth - zr));
+                    var zrFactor= (maxDepth - zr) / (maxDepth - lastConditions.zr);
+                    lastConditions.drDz= lastConditions.drDz * zrFactor / tawDzRatio;
+                    lastConditions.drRz= drSum - lastConditions.drDz;
+                }
+                lastConditions.tawRz = tawRz;
+                lastConditions.tawDz = tawDz;
+            }
+
+            internal static void AdjustSoilConditionsDualZr(ref SoilConditionsDual lastConditions, double tawRz, double tawDz, double zr, double maxDepth)
+            {
+                var _lastConditionsE = lastConditions.e;
+                var _lastConditionsEt = lastConditions.et;
+                AdjustSoilConditionsZr(ref _lastConditionsE, tawRz, tawDz, zr, maxDepth);
+                AdjustSoilConditionsZr(ref _lastConditionsEt, tawRz, tawDz, zr, maxDepth);
+                lastConditions.e = _lastConditionsE;
+                lastConditions.et = _lastConditionsEt;
+            }
+            
+            internal static void AdjustSoilConditionsExceeded(ref SoilConditions lastConditions, double tawRz, double tawDz, double zrNew, double maxDepth, ref double e, ref double et)
+            {
+                if (zrNew != lastConditions.zr) AdjustSoilConditionsZr(ref lastConditions, tawRz, tawDz, zrNew, maxDepth);
+
+                var balanceSum = e + et;
+                //calculate soil water balance
+                var dpRz= Math.Max(0, balanceSum - lastConditions.drRz);
+                var drRz= lastConditions.drRz - balanceSum + dpRz;
+
+                if (drRz < 0) {
+                    //negative drainage should not happen -> percolate excess water to deep zone
+                    dpRz -= drRz;
+                    drRz= 0;
+                }
+                else if (drRz > lastConditions.tawRz) {
+                    //drainage exceeds taw -> adjust this day values to stay beyond this limit
+                    var drRzExceeded= drRz - (double)lastConditions.tawRz;
+
+                    var eFactor= e / balanceSum;
+                    var etFactor= et / balanceSum;
+                    et = Math.Min(0, et - drRzExceeded * etFactor);
+                    e = Math.Min(0, e - drRzExceeded * eFactor);
+                    drRz = lastConditions.drRz - balanceSum - drRzExceeded + dpRz;
+                }
+
+                var dpDz= Math.Max(0, dpRz - lastConditions.drDz);
+                var drDz= lastConditions.drDz - dpRz + dpDz;
+
+                if (drDz < 0) {
+                    //negative drainage should not happen -> deep percolate excess water
+                    dpDz -= drDz;
+                    drDz= 0;
+                }
+                if (drDz > tawDz) {
+                    //drainage exceeds taw should not happen in deep zone -> write exceed value to result table
+                    drDz= tawDz;
+                }
+            }
+
+            internal static void AdjustSoilConditionsExceededDual(ref SoilConditionsDual lastConditions, double tawRz, double tawDz, double zr, double maxDepth, ref double e, ref double t, ref double et)
+            {
+                var _lastConditionsE = lastConditions.e;
+                var _lastConditionsEt = lastConditions.et;
+                AdjustSoilConditionsExceeded(ref _lastConditionsE, tawRz, tawDz, zr, maxDepth, ref e, ref t);
+                var eDummy = 0.0;
+                AdjustSoilConditionsExceeded(ref _lastConditionsEt, tawRz, tawDz, zr, maxDepth, ref eDummy, ref et);
+                lastConditions.e = _lastConditionsE;
+                lastConditions.et = _lastConditionsEt;
+            }
+        }
+
+        
         /*!
         * \brief	defines a collection of soil values.
         *
@@ -112,8 +258,10 @@ namespace atbApi
 
         public class SoilDb
         {
+            private static const double DepthOffset = 0.000000000001;
             private Stream soilDbFileStream;
             private ICollection<String> names = new HashSet<String>();
+            private IDictionary<String, double> maxDepth = new Dictionary<String, double>();
             private IDictionary<String, IDictionary<Double, SoilValues>> soilData = new Dictionary<String, IDictionary<Double, SoilValues>>();
 
             /*!
@@ -155,12 +303,18 @@ namespace atbApi
                     values.parseData(fields);
                     Double _iterator = Math.Round(Double.Parse(fields["_iterator.z"], CultureInfo.InvariantCulture), 2);
                     soilValues.Add(_iterator, values);
+                    maxDepth[name] = Math.Max(maxDepth[name], _iterator);
                 }
             }
 
             internal IDictionary<Double, SoilValues> getSoilData(String name)
             {
                 return soilData[name];
+            }
+
+            internal double getMaxDepth(String name)
+            {
+                return maxDepth[name] - DepthOffset;
             }
 
             /*!
@@ -227,6 +381,7 @@ namespace atbApi
         public class Soil
         {
             private String _name;
+            private double _maxDepth;
             private IDictionary<Double, SoilValues> soilData;
 
             /*!
@@ -236,6 +391,14 @@ namespace atbApi
              */
 
             public String name { get { return this._name; } }
+
+            /*!
+             * \brief   public readonly property to access the maxDepth
+             *
+             * \return  The max Depth of the soil from soilDb.
+             */
+
+            public double maxDepth { get { return this._maxDepth; } }
 
             /*!
              * \brief   Constructor, creates a soil and read all data from the dll builtin soilDb
@@ -256,6 +419,7 @@ namespace atbApi
                 if (name == null) return;
 
                 this._name = name;
+                this._maxDepth = LocalSoilDb.Instance.getMaxDepth(_name);
                 this.soilData = LocalSoilDb.Instance.getSoilData(_name);
             }
 
@@ -281,6 +445,7 @@ namespace atbApi
                 if (name == null || soilDb == null) return;
 
                 this._name = name;
+                this._maxDepth = soilDb.getMaxDepth(_name);
                 this.soilData = soilDb.getSoilData(_name);
             }
 

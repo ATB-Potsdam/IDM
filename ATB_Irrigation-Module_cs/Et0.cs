@@ -20,6 +20,46 @@ using local;
 
 namespace atbApi
 {
+    public class Et0PmArgs
+    {
+        public double _as { get; set; }
+        public double _bs { get; set; }
+
+        public Et0PmArgs()
+        {
+            _as = 0.25;
+            _bs = 0.5;
+        }
+
+        public Et0PmArgs(double _as, double _bs)
+        {
+            this._as = _as;
+            this._bs = _bs;
+        }
+    }
+
+    public class Et0HgArgs
+    {
+        public double _ct { get; set; }
+        public double _ch { get; set; }
+        public double _eh { get; set; }
+
+        public Et0HgArgs()
+        {
+            _ct = 17.8;
+            _ch = 0.0023;
+            _eh = 0.5;
+        }
+
+        public Et0HgArgs(double _ct, double _ch, double _eh)
+        {
+            this._ct = _ct;
+            this._ch = _ch;
+            this._eh = _eh;
+        }
+    }
+
+
     /*!
      * \brief   Encapsulates the result of a ET0 calculation.
      *
@@ -84,14 +124,6 @@ namespace atbApi
 
     public static class Et0
     {
-        public static Et0Result Et0Calc(
-            Climate climate,
-            DateTime date,
-            Location location
-        )
-        {
-            return Et0Calc(climate, date, location, null, null, null, null, null);
-        }
         /*!
          * \brief   Use this method to choose model for ET0 calculation automatically depending on available data.
          *
@@ -110,12 +142,7 @@ namespace atbApi
         public static Et0Result Et0Calc(
             Climate climate,
             DateTime date,
-            Location location,
-            Double? _as,
-            Double? _bs,
-            Double? ct,
-            Double? ch,
-            Double? eh
+            Location location
         )
         {
             var climateSet = climate.getValues(date);
@@ -129,20 +156,12 @@ namespace atbApi
                 && (climateSet.Rs != null || climateSet.sunshine_duration != null)
             )
                 //data sufficient for Penman-Monteith
-                return Et0CalcPm(climate, date, location, _as, _bs);
+                return Et0CalcPm(climate, date, location, new Et0PmArgs());
             //use Hargreaves
-            return Et0CalcHg(climate, date, location, ct, ch, eh);
+            return Et0CalcHg(climate, date, location, new Et0HgArgs());
         }
 
 
-        public static Et0Result Et0CalcPm(
-            Climate climate,
-            DateTime date,
-            Location location
-        )
-        {
-            return Et0CalcPm(climate, date, location, null, null);
-        }
 
         /*!
          * \brief   Calculate ET0 with Penman-Monteith method as described in FAO paper 56.
@@ -160,8 +179,7 @@ namespace atbApi
             Climate climate,
             DateTime date,
             Location location,
-            Double? _as,
-            Double? _bs
+            Et0PmArgs et0Args
         )
         {
             var climateSet = climate.getValues(date);
@@ -179,8 +197,6 @@ namespace atbApi
             if (climateSet.mean_temp == null) climateSet.mean_temp = (climateSet.min_temp + climateSet.max_temp) / 2;
             //FAO recommended value default of 2m/s
             if (climateSet.windspeed == null) climateSet.windspeed = 2;
-            if (_as == null) _as = 0.25;
-            if (_bs == null) _bs = 0.5;
             if (location.alt == null) location.alt = 0;
 
             var raResult = Ra.RaCalc(date, location);
@@ -200,7 +216,7 @@ namespace atbApi
             var rs0= (0.75 + 0.00002 * location.alt) * ra;
             var rs= climateSet.Rs;
             if (rs == null) {
-                rs= (_as + _bs * climateSet.sunshine_duration  /  n) * ra;
+                rs = (et0Args._as + et0Args._bs * climateSet.sunshine_duration / n) * ra;
                 rs= Math.Min((double)rs, (double)rs0);
             }
             var rsDivRs0= Math.Min((double)rs / (double)rs0, 1);
@@ -216,15 +232,6 @@ namespace atbApi
             return new Et0Result(ra, et0);
         }
 
-
-        public static Et0Result Et0CalcHg(
-            Climate climate,
-            DateTime date,
-            Location location
-        )
-        {
-            return Et0CalcHg(climate, date, location, null, null, null);
-        }
 
         /*!
          * \brief   Calculate ET0 with Hargreaves method as described in FAO paper 56.
@@ -243,9 +250,7 @@ namespace atbApi
             Climate climate,
             DateTime date,
             Location location,
-            Double? ct,
-            Double? ch,
-            Double? eh
+            Et0HgArgs et0Args
         )
         {
 
@@ -263,11 +268,8 @@ namespace atbApi
                 return new Et0Result(0, 0);
             }
 
-            if (ct == null) ct = 17.8;
-            if (ch == null) ch = 0.0023;
-            if (eh == null) eh = 0.5;
             var lambda = 2.5 - 0.002361 * ((double)climateSet.max_temp + (double)climateSet.min_temp) / 2;
-            var et0 = (double)ch * ra * Math.Pow(((double)climateSet.max_temp - (double)climateSet.min_temp), (double)eh) * (((double)climateSet.max_temp + (double)climateSet.min_temp) / 2 + (double)ct) / (double)lambda;
+            var et0 = et0Args._ch * ra * Math.Pow(((double)climateSet.max_temp - (double)climateSet.min_temp), et0Args._eh) * (((double)climateSet.max_temp + (double)climateSet.min_temp) / 2 + et0Args._ct) / (double)lambda;
 
             return new Et0Result(ra, et0);
         }

@@ -46,12 +46,14 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="BaseValues.cs" />
+    <Compile Include="Evaporation.cs" />
     <Compile Include="IrrigationData.cs" />
     <Compile Include="Et0.cs" />
     <Compile Include="KcIni.cs" />
     <Compile Include="ClimateData.cs" />
     <Compile Include="CsvReader.cs" />
     <Compile Include="GeoTools.cs" />
+    <Compile Include="MeanValue.cs" />
     <Compile Include="SoilData.cs" />
     <Compile Include="Tools.cs" />
     <Compile Include="Transpiration.cs" />

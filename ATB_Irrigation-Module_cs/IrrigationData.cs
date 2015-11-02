@@ -71,6 +71,58 @@ namespace atbApi
             public static readonly IrrigationType drip = new IrrigationType(0.3, 0, "drip");
         }
 
+        public class AutoIrrigationControl
+        {
+            public double autoIrrLevel { get; set; }
+            public double autoIrrCutoff { get; set; }
+            public double autoIrrAmount { get; set; }
+            public IrrigationType autoIrrType { get; set; }
+            public Int32? autoIrrStartDay { get; set; }
+            public Int32? autoIrrEndDay { get; set; }
+
+            public AutoIrrigationControl()
+            {
+                autoIrrLevel = 0.8;
+                autoIrrCutoff = 0.9;
+                autoIrrAmount = 2;
+                autoIrrType = IrrigationTypes.sprinkler;
+            }
+
+            public AutoIrrigationControl(double autoIrrLevel, double autoIrrCutoff, double autoIrrAmount)
+            {
+                this.autoIrrLevel = autoIrrLevel;
+                this.autoIrrCutoff = autoIrrCutoff;
+                this.autoIrrAmount = autoIrrAmount;
+                autoIrrType = IrrigationTypes.sprinkler;
+            }
+
+            public AutoIrrigationControl(double autoIrrLevel, double autoIrrCutoff, double autoIrrAmount, IrrigationType autoIrrType)
+            {
+                this.autoIrrLevel = autoIrrLevel;
+                this.autoIrrCutoff = autoIrrCutoff;
+                this.autoIrrAmount = autoIrrAmount;
+                this.autoIrrType = autoIrrType;
+            }
+
+            public AutoIrrigationControl(
+                double autoIrrLevel,
+                double autoIrrCutoff,
+                double autoIrrAmount,
+                IrrigationType autoIrrType,
+                int autoIrrStartDay,
+                int autoIrrEndDay
+            )
+            {
+                this.autoIrrLevel = autoIrrLevel;
+                this.autoIrrCutoff = autoIrrCutoff;
+                this.autoIrrAmount = autoIrrAmount;
+                this.autoIrrType = autoIrrType;
+                this.autoIrrStartDay = autoIrrStartDay;
+                this.autoIrrEndDay = autoIrrEndDay;
+            }
+        }
+
+
         /*!
          * \brief   An irrigation schedule. This class is used to pass irrigation data to and from this dll.
          *
