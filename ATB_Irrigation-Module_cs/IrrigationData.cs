@@ -71,54 +71,94 @@ namespace atbApi
             public static readonly IrrigationType drip = new IrrigationType(0.3, 0, "drip");
         }
 
+        /*!
+         * \brief   class that holds information how automatic irrigation is applied.
+         *
+         */
+
         public class AutoIrrigationControl
         {
-            public double autoIrrLevel { get; set; }
-            public double autoIrrCutoff { get; set; }
-            public double autoIrrAmount { get; set; }
-            public IrrigationType autoIrrType { get; set; }
-            public Int32? autoIrrStartDay { get; set; }
-            public Int32? autoIrrEndDay { get; set; }
+            public double level { get; set; }
+            public double cutoff { get; set; }
+            public double amount { get; set; }
+            public IrrigationType type { get; set; }
+            /*! Automatic irrigation start day, no irrigation is applied before this day of plant development */
+            public Int32? startDay { get; set; }
+            /*! Automatic irrigation end day, no irrigation is applied after this day of plant development */
+            public Int32? endDay { get; set; }
+
+            /*!
+             * \brief Default constructor, irrigationType defaults to sprinkler, standard values for irrigation control are set
+             *
+             */
 
             public AutoIrrigationControl()
             {
-                autoIrrLevel = 0.8;
-                autoIrrCutoff = 0.9;
-                autoIrrAmount = 2;
-                autoIrrType = IrrigationTypes.sprinkler;
+                level = 0.6;
+                cutoff = 0.75;
+                amount = 0;
+                type = IrrigationTypes.sprinkler;
             }
 
-            public AutoIrrigationControl(double autoIrrLevel, double autoIrrCutoff, double autoIrrAmount)
+            /*!
+             * \brief Constructor.
+             *
+             * \param   level    The automatic irr level.
+             * \param   cutoff   The automatic irr cutoff.
+             * \param   amount   The automatic irr amount.
+             */
+
+            public AutoIrrigationControl(double level, double cutoff, double amount)
             {
-                this.autoIrrLevel = autoIrrLevel;
-                this.autoIrrCutoff = autoIrrCutoff;
-                this.autoIrrAmount = autoIrrAmount;
-                autoIrrType = IrrigationTypes.sprinkler;
+                this.level = level;
+                this.cutoff = cutoff;
+                this.amount = amount;
+                type = IrrigationTypes.sprinkler;
             }
 
-            public AutoIrrigationControl(double autoIrrLevel, double autoIrrCutoff, double autoIrrAmount, IrrigationType autoIrrType)
+            /*!
+             * \brief Constructor.
+             *
+             * \param   level    The automatic irr level.
+             * \param   cutoff   The automatic irr cutoff.
+             * \param   amount   The automatic irr amount.
+             * \param   type     Type of the automatic irr.
+             */
+
+            public AutoIrrigationControl(double level, double cutoff, double amount, IrrigationType type)
             {
-                this.autoIrrLevel = autoIrrLevel;
-                this.autoIrrCutoff = autoIrrCutoff;
-                this.autoIrrAmount = autoIrrAmount;
-                this.autoIrrType = autoIrrType;
+                this.level = level;
+                this.cutoff = cutoff;
+                this.amount = amount;
+                this.type = type;
             }
+
+            /*!
+             * \brief Constructor.
+             *
+             * \param   level    The automatic irr level.
+             * \param   cutoff   The automatic irr cutoff.
+             * \param   amount   The automatic irr amount.
+             * \param   type     Type of the automatic irr.
+             * \param   startDay The automatic irr start day.
+             * \param   endDay   The automatic irr end day.
+             */
 
             public AutoIrrigationControl(
-                double autoIrrLevel,
-                double autoIrrCutoff,
-                double autoIrrAmount,
-                IrrigationType autoIrrType,
-                int autoIrrStartDay,
-                int autoIrrEndDay
+                double level,
+                double cutoff,
+                double amount,
+                IrrigationType type,
+                int startDay,
+                int endDay
             )
             {
-                this.autoIrrLevel = autoIrrLevel;
-                this.autoIrrCutoff = autoIrrCutoff;
-                this.autoIrrAmount = autoIrrAmount;
-                this.autoIrrType = autoIrrType;
-                this.autoIrrStartDay = autoIrrStartDay;
-                this.autoIrrEndDay = autoIrrEndDay;
+                this.level = level;
+                this.cutoff = cutoff;
+                this.amount = amount;
+                this.type = type;
+                this.startDay = startDay;
+                this.endDay = endDay;
             }
         }
 
@@ -133,10 +173,10 @@ namespace atbApi
             /*! Irrigation schedule as HashMap of Dates and irrigation amounts */
             public IDictionary<DateTime, double> schedule { get; set; }
             /*! Type of irrigation method */
-            public IrrigationType irrigationType { get; set; }
+            public IrrigationType type { get; set; }
 
             /*!
-             * \brief   Default constructor, an empty schedule is created, irrgationType defaults to "sprinkler"
+             * \brief   Default constructor, irrgationType defaults to "sprinkler"
              *
              */
 
@@ -145,10 +185,15 @@ namespace atbApi
             {
             }
 
-            public IrrigationSchedule(IrrigationType irrigationType)
+            /*!
+             * \brief   Constructor, an empty schedule is created, irrgationType is set
+             *
+             */
+
+            public IrrigationSchedule(IrrigationType type)
             {
                 this.schedule = new Dictionary<DateTime, double>();
-                this.irrigationType = irrigationType;
+                this.type = type;
             }
         }
     }

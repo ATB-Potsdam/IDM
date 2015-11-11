@@ -37,7 +37,7 @@ namespace atbApi
             /*! drainage in the evaporation layer */
             public double de { get; set; }
             /*! percolation from the evaporation layer */
-            public Double? dpe { get; set; }
+            public double dpe { get; set; }
             /*! rooting depth of the crop */
             public double zr { get; set; }
 
@@ -46,13 +46,13 @@ namespace atbApi
                 drRz = 0.0;
                 drDz = 0.0;
                 de = 0.0;
-                dpe = null;
+                dpe = 0.0;
                 zr = 0.3;
                 tawRz = null;
                 tawDz = null;
             }
 
-            public SoilConditions(double drRz, double drDz, double de, Double? dpe, double zr, Double? tawRz, Double? tawDz)
+            public SoilConditions(double drRz, double drDz, double de, double dpe, double zr, Double? tawRz, Double? tawDz)
             {
                 this.drRz = drRz;
                 this.drDz = drDz;
@@ -63,63 +63,26 @@ namespace atbApi
                 this.tawDz = tawDz;
             }
 
-            public SoilConditions(Soil soil, Double? zr, Double? depletionRz, Double? depletionDz, Double? depletionDe)
+            public SoilConditions(Soil soil, double zr = 0.3, double depletionRz = 0.1, double depletionDz = 0.1, double depletionDe = 0.1)
             {
                 //hardcoded default values if values are ommitted in constructor
-                var zrInitial = 0.3;
-                var depletionRzInitial = 0.1;
-                var depletionDzInitial = 0.1;
-                var depletionDeInitial = 0.1;
                 var zeInitial = 0.1;
 
-                this.zr = zr != null ? (double)zr : zrInitial;
-                this.zr = Math.Max(0, Math.Min(soil.maxDepth, this.zr));
+                this.zr = Math.Max(0, Math.Min(soil.maxDepth, zr));
                 var soilSetStart = soil.getValues(this.zr);
                 var soilSetMax = soil.getValues(soil.maxDepth);
-                tawRz= 1000 * (soilSetStart.Qfc - soilSetStart.Qwp) * zr;
+                tawRz= 1000 * (soilSetStart.Qfc - soilSetStart.Qwp) * this.zr;
                 var tawMax= 1000 * (soilSetMax.Qfc - soilSetMax.Qwp) * soil.maxDepth;
                 tawDz= tawMax - tawRz;
                 var ze= soilSetStart.Ze != null ? (double)soilSetStart.Ze : zeInitial;
 
-                drRz = depletionRz != null ? (double)depletionRz * (double)tawRz : depletionRzInitial * (double)tawRz;
-                drDz = depletionDz != null ? (double)depletionDz * (double)tawDz : depletionDzInitial * (double)tawDz;
-                de = depletionDe != null ? (double)depletionDe * (double)tawRz * (ze / zrInitial) : depletionDeInitial * (double)tawRz * (ze / zrInitial);
+                drRz = depletionRz * (double)tawRz;
+                drDz = depletionDz * (double)tawDz;
+                de = depletionDe * (double)tawRz * (ze / this.zr);
             }
         }
 
-        /*!
-         * \brief   Soil conditions for both calculation approaches: evapotranspiration and evaporation + transpiration
-         *          This structure is used to calculate a crop sequence plant by plant continuously on one soil.
-         *
-         */
-
-        public class SoilConditionsDual
-        {
-            /*! conditions for evaporation + transpiration calculation */
-            public SoilConditions e { get; set; }
-            /*! conditions for evapotranspiration calculation */
-            public SoilConditions et { get; set; }
-
-            public SoilConditionsDual()
-            {
-                e = new SoilConditions();
-                et = new SoilConditions();
-            }
-
-            public SoilConditionsDual(double drRz, double drDz, double de, Double? dpe, double zr, Double? tawRz, Double? tawDz)
-            {
-                e = new SoilConditions(drRz, drDz, de, dpe, zr, tawRz, tawDz);
-                et = new SoilConditions(drRz, drDz, 0.0, null, zr, tawRz, tawDz);
-            }
-
-            public SoilConditionsDual(Soil soil, Double? zr, Double? depletionRzInitial, Double? depletionDzInitial, Double? depletionDeInitial)
-            {
-                e = new SoilConditions(soil, zr, depletionRzInitial, depletionDzInitial, depletionDeInitial);
-                et = new SoilConditions(soil, zr, depletionRzInitial, depletionDzInitial, depletionDeInitial);
-            }
-        }
-
-        internal class SoilConditionTools
+        internal static sealed class SoilConditionTools
         {
             //adjust drainage according to changed root depth
             internal static void AdjustSoilConditionsZr(ref SoilConditions lastConditions, double tawRz, double tawDz, double zr, double maxDepth)
@@ -156,16 +119,6 @@ namespace atbApi
                 lastConditions.tawDz = tawDz;
             }
 
-            internal static void AdjustSoilConditionsDualZr(ref SoilConditionsDual lastConditions, double tawRz, double tawDz, double zr, double maxDepth)
-            {
-                var _lastConditionsE = lastConditions.e;
-                var _lastConditionsEt = lastConditions.et;
-                AdjustSoilConditionsZr(ref _lastConditionsE, tawRz, tawDz, zr, maxDepth);
-                AdjustSoilConditionsZr(ref _lastConditionsEt, tawRz, tawDz, zr, maxDepth);
-                lastConditions.e = _lastConditionsE;
-                lastConditions.et = _lastConditionsEt;
-            }
-            
             internal static void AdjustSoilConditionsExceeded(ref SoilConditions lastConditions, double tawRz, double tawDz, double zrNew, double maxDepth, ref double e, ref double et)
             {
                 if (zrNew != lastConditions.zr) AdjustSoilConditionsZr(ref lastConditions, tawRz, tawDz, zrNew, maxDepth);
@@ -205,16 +158,6 @@ namespace atbApi
                 }
             }
 
-            internal static void AdjustSoilConditionsExceededDual(ref SoilConditionsDual lastConditions, double tawRz, double tawDz, double zr, double maxDepth, ref double e, ref double t, ref double et)
-            {
-                var _lastConditionsE = lastConditions.e;
-                var _lastConditionsEt = lastConditions.et;
-                AdjustSoilConditionsExceeded(ref _lastConditionsE, tawRz, tawDz, zr, maxDepth, ref e, ref t);
-                var eDummy = 0.0;
-                AdjustSoilConditionsExceeded(ref _lastConditionsEt, tawRz, tawDz, zr, maxDepth, ref eDummy, ref et);
-                lastConditions.e = _lastConditionsE;
-                lastConditions.et = _lastConditionsEt;
-            }
         }
 
         

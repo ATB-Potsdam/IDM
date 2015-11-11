@@ -21,6 +21,11 @@ using atbApi.data;
  */
 namespace local
 {
+    /*!
+     * \brief   Singleton class for tools.
+     *
+     */
+
     internal static class Tools
     {
         internal static double Linear_day(int iterator, int startIterator, int endIterator, double startValue, double endValue)

@@ -124,17 +124,23 @@ namespace atbApi
 
     public static class Et0
     {
+        public static Et0Result Et0Calc(
+            Climate climate,
+            DateTime date,
+            Location location
+        )
+        {
+            return Et0Calc(climate, date, location, new Et0PmArgs(), new Et0HgArgs());
+        }
+
         /*!
          * \brief   Use this method to choose model for ET0 calculation automatically depending on available data.
          *
          * \param   climate     Parameter to relay to matching ET0 calculation model.
          * \param   date        Parameter to relay to matching ET0 calculation model.
          * \param   location    Parameter to relay to matching ET0 calculation model.
-         * \param   _as         Relayed to Et0CalcPm()
-         * \param   _bs         Relayed to Et0CalcPm()
-         * \param   ct          Relayed to Et0CalcHg()
-         * \param   ch          Relayed to Et0CalcHg()
-         * \param   eh          Relayed to Et0CalcHg()
+         * \param   et0PmArgs   Relayed to Et0CalcPm()
+         * \param   et0HgArgs   Relayed to Et0CalcHg()
          *
          * \return  An Et0Result structure.
          */
@@ -142,7 +148,9 @@ namespace atbApi
         public static Et0Result Et0Calc(
             Climate climate,
             DateTime date,
-            Location location
+            Location location,
+            Et0PmArgs et0PmArgs,
+            Et0HgArgs et0HgArgs
         )
         {
             var climateSet = climate.getValues(date);
@@ -156,9 +164,9 @@ namespace atbApi
                 && (climateSet.Rs != null || climateSet.sunshine_duration != null)
             )
                 //data sufficient for Penman-Monteith
-                return Et0CalcPm(climate, date, location, new Et0PmArgs());
+                return Et0CalcPm(climate, date, location, et0PmArgs);
             //use Hargreaves
-            return Et0CalcHg(climate, date, location, new Et0HgArgs());
+            return Et0CalcHg(climate, date, location, et0HgArgs);
         }
 
 
