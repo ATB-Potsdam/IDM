@@ -65,8 +65,8 @@
     <Compile Include="WebApiRequest.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="IWRM_ATB-PlantData.csv.gz" />
     <EmbeddedResource Include="IWRM_ATB-SoilData.csv.gz" />
+    <EmbeddedResource Include="IWRM_ALL-PlantData.csv.gz" />
     <None Include="rl3SignKey.snk" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
