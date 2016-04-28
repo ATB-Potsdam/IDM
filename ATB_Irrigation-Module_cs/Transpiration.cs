@@ -86,16 +86,7 @@ namespace atbApi
         }
     }
 
-    public enum CalculationType
-    {
-        /*! evaporation and transpiration calc */
-        e = 0x0,
-        /*! evapotranspiration calc */
-        et = 0x1,
-    };
-
     public class ETArgs {
-        public CalculationType calcType { get; set; }
         public ETResult result { get; set; }
         public Climate climate { get; set; }
         public Plant plant { get; set; }
@@ -103,6 +94,7 @@ namespace atbApi
         public Location location { get; set; }
         public DateTime seedDate { get; set; }
         public DateTime harvestDate { get; set; }
+        public bool adaptStageLength  { get; set; }
         public DateTime start { get; set; }
         public DateTime end { get; set; }
         //from here optional arguments
@@ -113,10 +105,9 @@ namespace atbApi
         public Et0HgArgs et0HgArgs { get; set; }
         public double eFactor { get; set; }
         public double a { get; set; }
-        public Double? kcIni { get; set; }
 
         public ETArgs() {
-            calcType = CalculationType.e;
+            adaptStageLength = true;
             //from here optional arguments
             irrigationSchedule = null;
             lastConditions = null;
@@ -125,7 +116,6 @@ namespace atbApi
             et0HgArgs = new Et0HgArgs();
             eFactor = 1;
             a = 0.25;
-            kcIni = null;
         }
     }
 
@@ -157,10 +147,6 @@ namespace atbApi
         public double tAct { get; set; }
         /*! etc[mm], unit: "mm", description: Sum of Evapotranspiration and transpiration for calculation period. */
         public double eActPlusTact { get; set; }
-        /*! etc[mm], unit: "mm", description: Sum of Evapotranspiration for calculation period. */
-        public double et { get; set; }
-        /*! etAct[mm], unit: "mm", description: Sum of actual Evapotranspiration for calculation period. */
-        public double etAct { get; set; }
         /*! precipitation[mm], unit: "mm", description: Precipitation sum for calculation period. */
         public double precipitation { get; set; }
         /*! interception[mm], unit: "mm", description: Interception sum for calculation period. This amount of water from "precipitation" is intercepted by leafes and does not reach the soil surface. */
@@ -233,10 +219,6 @@ namespace atbApi
         public double t { get; set; }
         /*! tAct[mm], unit: "mm", description: Sum of actual Transpiration for calculation period. */
         public double tAct { get; set; }
-        /*! etc[mm], unit: "mm", description: Sum of Evapotranspiration for calculation period. */
-        public double et { get; set; }
-        /*! etAct[mm], unit: "mm", description: Sum of actual Evapotranspiration for calculation period. */
-        public double etAct { get; set; }
         /*! precipitation[mm], unit: "mm", description: Precipitation sum for calculation period. */
         public double precipitation { get; set; }
         public double netPrecipitation { get; set; }
@@ -305,7 +287,6 @@ namespace atbApi
          * \date    29.10.2015
          *
          * \param [in,out]  result      The result.
-         * \param   type                The type.
          * \param   climate             The climate.
          * \param   plant               The plant.
          * \param   soil                The soil.
@@ -539,31 +520,29 @@ namespace atbApi
                 loopResult.tawRz = tawRz;
                 loopResult.tawDz = tawDz;
 
-                if (args.calcType == CalculationType.e) {
-                    var eConditions = args.lastConditions;
-                    var eResult = Evaporation.ECalculation(
-                        ref eConditions,
-                        plantSet,
-                        climateSet,
-                        args.irrigationSchedule.type,
-                        args.autoIrr.type,
-                        loopResult.et0,
-                        args.eFactor,
-                        tew,
-                        loopResult.irrigationFw,
-                        loopResult.autoIrrigationFw,
-                        loopResult.netIrrigation,
-                        loopResult.autoNetIrrigation,
-                        loopResult.interception,
-                        loopResult.interceptionIrr,
-                        loopResult.interceptionAutoIrr
-                    );
-                    args.lastConditions = eConditions;
-                    loopResult.e = eResult.e;
-                    loopResult.eAct = eResult.e;
-                    loopResult.de = eResult.de;
-                    loopResult.dpe = eResult.dpe;
-                }
+                var eConditions = args.lastConditions;
+                var eResult = Evaporation.ECalculation(
+                    ref eConditions,
+                    plantSet,
+                    climateSet,
+                    args.irrigationSchedule.type,
+                    args.autoIrr.type,
+                    loopResult.et0,
+                    args.eFactor,
+                    tew,
+                    loopResult.irrigationFw,
+                    loopResult.autoIrrigationFw,
+                    loopResult.netIrrigation,
+                    loopResult.autoNetIrrigation,
+                    loopResult.interception,
+                    loopResult.interceptionIrr,
+                    loopResult.interceptionAutoIrr
+                );
+                args.lastConditions = eConditions;
+                loopResult.e = eResult.e;
+                loopResult.eAct = eResult.e;
+                loopResult.de = eResult.de;
+                loopResult.dpe = eResult.dpe;
                 /*
                 loopResult.few = eResult.few;
                 loopResult.tew = eResult.tew;
@@ -585,44 +564,6 @@ namespace atbApi
                 );
                 args.lastConditions = etConditions;
                 
-                var _kcIni = plantSet.Kc;
-                if (stageName == "initial") {
-                    var kcIniResult = KcIni.KcIniCalc(
-                        args.climate,
-                        args.plant,
-                        args.soil,
-                        args.irrigationSchedule,
-                        loopDate,
-                        args.plant.initialEnd,
-                        args.location,
-                        args.lastConditions.de,
-                        zr,
-                        args.autoIrr,
-                        args.eFactor
-                    );
-                    result.kcIni = kcIniResult.kcIni;
-                    _kcIni = result.kcIni;
-                }
-                if (stageName == "development") {
-                    //if kcIni undefined -> plant without initial phase -> return Kc from development stage
-                    if (result.kcIni == null) {
-                        result.kcIni = (double)plantSet.Kc;
-                        _kcIni = plantSet.Kc;
-                    } else {
-                        _kcIni = Tools.Linear_day((int)plantDay, args.plant.initialEnd + 1, args.plant.developmentEnd, result.kcIni, (double)plantSet.Kc);
-                    }
-                }
-
-                etConditions = args.lastConditions;
-                TcCalculation(
-                    climateSet,
-                    plantSet,
-                    (double)_kcIni,
-                    ref etConditions,
-                    "Etc",
-                    ref loopResult
-                );
-                args.lastConditions = etConditions;
 
                 //adjust moved zone border
                 //SoilConditionTools.AdjustSoilConditionsDualZr(ref lastConditions, tawRz, tawDz, (double)plantSet.Zr, maxDepth);
@@ -729,60 +670,5 @@ namespace atbApi
         }
 
 
-        internal static void CommonCalculation(
-            ref ETDailyValues loopResult,
-            ClimateValues climateSet,
-            PlantValues plantSet,
-            double kc,
-            ref SoilConditions lastConditions,
-            String resultSuffix,
-        ) {
-            //Tc / Kcb calculations
-            var kcAdj= kc;
-            if ((loopResult.plantStage == "mid_season" || loopResult.plantStage == "late_season") && kc > 0.45) {
-                kcAdj= kc + (0.04 * ((double)climateSet.windspeed - 2) - 0.004 * ((double)climateSet.humidity - 45)) * Math.Pow(((double)plantSet.height / 3), 0.3);
-            }
-            var etc= loopResult.et0 * kcAdj;
-            var pAdj= (double)plantSet.p + 0.04 * (5 - etc);
-            //0.1 < pAdj < 0.8
-            pAdj= Math.Min(0.8, pAdj);
-            pAdj= Math.Max(0.1, pAdj);
-            var raw= loopResult.tawRz * pAdj;
-            var ks= raw != 0 ? 1.0 : 0.0;
-            if ((lastConditions.drRz > raw && raw != 0) && !(bool)plantSet.isFallow) {
-                ks= Math.Max(0, (loopResult.tawRz - lastConditions.drRz) / (loopResult.tawRz - raw));
-            }
-            var etAct= etc * ks;
-
-            if (resultSuffix == "Etc") {
-                loopResult.kc= kc;
-                loopResult.kcAdj= kcAdj;
-                loopResult.et= etc;
-                loopResult.etAct= etAct;
-                loopResult.pAdjEtc= pAdj;
-                loopResult.rawEtc= raw;
-                loopResult.ksEtc= ks;
-                if (plantSet.Ky != null)
-                {
-                    loopResult.yieldReductionEtc = plantSet.Ky * (1 - ks);
-                    loopResult.plantKy = plantSet.Ky;
-                }
-            }
-            else
-            {
-                loopResult.kcb= kc;
-                loopResult.kcbAdj= kcAdj;
-                loopResult.t= etc;
-                loopResult.tAct= etAct;
-                loopResult.pAdjTc= pAdj;
-                loopResult.rawTc= raw;
-                loopResult.ksTc= ks;
-                if (plantSet.Ky != null)
-                {
-                    loopResult.yieldReductionTc = plantSet.Ky * (1 - ks);
-                    loopResult.plantKy = plantSet.Ky;
-                }
-            }
-        }
     }
 }
