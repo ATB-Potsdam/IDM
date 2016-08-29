@@ -106,8 +106,8 @@ Public Class Form1
         location.alt = altitude
         TextBox1.AppendText(climate.name + " start:" + climate.start + " end:" + climate.end + " altitude:" + location.alt.ToString() + vbNewLine)
         Dim testDate As DateTime = New DateTime(2012, 7, 31, 0, 0, 0, DateTimeKind.Utc)
-        Dim et0Hg As atbApi.Et0Result = atbApi.Et0.Et0CalcHg(climate, testDate, location)
-        Dim et0Pm As atbApi.Et0Result = atbApi.Et0.Et0CalcPm(climate, testDate, location)
+        Dim et0Hg As atbApi.Et0Result = atbApi.Et0.Et0CalcHg(climate, testDate, location, New atbApi.Et0HgArgs)
+        Dim et0Pm As atbApi.Et0Result = atbApi.Et0.Et0CalcPm(climate, testDate, location, New atbApi.Et0PmArgs)
         Dim et0 As atbApi.Et0Result = atbApi.Et0.Et0Calc(climate, testDate, location)
 
         TextBox1.AppendText("et0Hg:" + et0Hg.et0.ToString() + " et0Pm:" + et0Pm.et0.ToString() + " et0:" + et0.et0.ToString() + " climateEt0:" + climate.getValues(testDate).et0.ToString() + vbNewLine)
@@ -145,14 +145,14 @@ Public Class Form1
         'create new soil water conditions if sequential calculation starts
         'it is important, to keep transpirationResult.lastConditions and use this
         'instead for consecutive crops on the same field
-        Dim soilConditions As atbApi.data.SoilConditionsDual = New atbApi.data.SoilConditionsDual()
+        Dim soilConditions As atbApi.data.SoilConditions = New atbApi.data.SoilConditions()
         'define seedDate and harvestDate
         Dim seedDate As DateTime = New DateTime(2012, 4, 12, 0, 0, 0, DateTimeKind.Utc)
         Dim harvestDate As DateTime = New DateTime(2012, 10, 5, 0, 0, 0, DateTimeKind.Utc)
         'start calculation
-        Dim transpirationResult As atbApi.TranspirationResult = atbApi.Transpiration.TranspirationCalc(climate, plant, soil, Nothing, location, seedDate, harvestDate, soilConditions, False)
-        TextBox1.AppendText("et0:" + transpirationResult.et0.ToString() + " runtimeMs:" + transpirationResult.runtimeMs.ToString("F3") + vbNewLine)
+        '        Dim transpirationResult As atbApi.TranspirationResult = atbApi.Transpiration.TranspirationCalc(climate, plant, soil, Nothing, location, seedDate, harvestDate, soilConditions, False)
+        '       TextBox1.AppendText("et0:" + transpirationResult.et0.ToString() + " runtimeMs:" + transpirationResult.runtimeMs.ToString("F3") + vbNewLine)
         'keep this for next calculation on this field
-        Dim nextSoilConditions As atbApi.data.SoilConditionsDual = transpirationResult.lastConditions
+        '      Dim nextSoilConditions As atbApi.data.SoilConditions = transpirationResult.lastConditions
     End Sub
 End Class

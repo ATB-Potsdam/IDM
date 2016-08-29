@@ -1,5 +1,6 @@
 ﻿namespace local
 {
+    /*
     internal static class MeanValue
     {
         private int num = 0;
@@ -17,4 +18,5 @@
             num++;
         }
     }
+     */
 }

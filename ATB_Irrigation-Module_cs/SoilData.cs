@@ -10,6 +10,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using local;
@@ -82,7 +83,7 @@ namespace atbApi
             }
         }
 
-        internal static sealed class SoilConditionTools
+        internal static class SoilConditionTools
         {
             //adjust drainage according to changed root depth
             internal static void AdjustSoilConditionsZr(ref SoilConditions lastConditions, double tawRz, double tawDz, double zr, double maxDepth)
@@ -201,7 +202,7 @@ namespace atbApi
 
         public class SoilDb
         {
-            private static const double DepthOffset = 0.000000000001;
+            private const double DepthOffset = 0.000000000001;
             private Stream soilDbFileStream;
             private ICollection<String> names = new HashSet<String>();
             private IDictionary<String, double> maxDepth = new Dictionary<String, double>();
@@ -246,7 +247,14 @@ namespace atbApi
                     values.parseData(fields);
                     Double _iterator = Math.Round(Double.Parse(fields["_iterator.z"], CultureInfo.InvariantCulture), 2);
                     soilValues.Add(_iterator, values);
-                    maxDepth[name] = Math.Max(maxDepth[name], _iterator);
+                    if (!maxDepth.ContainsKey(name))
+                    {
+                        maxDepth[name] = _iterator;
+                    }
+                    else
+                    {
+                        maxDepth[name] = Math.Max(maxDepth[name], _iterator);
+                    }
                 }
             }
 
