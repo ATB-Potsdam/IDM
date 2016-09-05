@@ -1,4 +1,9 @@
 ﻿Imports System.Reflection
+Imports System.Threading.Tasks
+Imports System.Globalization
+Imports System.IO
+
+
 
 Public Class Form1
     Public Sub New()
@@ -154,5 +159,19 @@ Public Class Form1
         '       TextBox1.AppendText("et0:" + transpirationResult.et0.ToString() + " runtimeMs:" + transpirationResult.runtimeMs.ToString("F3") + vbNewLine)
         'keep this for next calculation on this field
         '      Dim nextSoilConditions As atbApi.data.SoilConditions = transpirationResult.lastConditions
+    End Sub
+
+    Dim ClimateDb As atbApi.data.ClimateDb = New atbApi.data.ClimateDb()
+    Dim first = 1
+
+    Private Async Sub Button8_Click(sender As Object, e As EventArgs) Handles Button8.Click
+        If first = 1 Then
+            first = 0
+            Await ClimateDb.loadFromATBWebService()
+        End If
+
+        Dim seedDate As DateTime = New DateTime(2012, 4, 12, 0, 0, 0, DateTimeKind.Utc)
+        Dim harvestDate As DateTime = New DateTime(2012, 10, 5, 0, 0, 0, DateTimeKind.Utc)
+        Dim testClimate As Task(Of atbApi.data.Climate) = ClimateDb.getClimate("DWD_04371_Salzuflen_Bad", seedDate, harvestDate, atbApi.data.TimeStep.day)
     End Sub
 End Class

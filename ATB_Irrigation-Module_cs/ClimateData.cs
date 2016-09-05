@@ -8,6 +8,7 @@
 */
 
 using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Globalization;
@@ -70,6 +71,50 @@ namespace atbApi
                 base.parseData(values);
             }
         }
+
+
+        public class ClimateDb
+        {
+            private IDictionary<String, String> climateIds = new Dictionary<String, String>();
+            private IDictionary<String, Climate> climateInstances = new Dictionary<String, Climate>();
+            private Stream climateDbFileStream;
+
+            public ClimateDb()
+            {
+
+            }
+
+            public async Task<int> loadFromATBWebService()
+            {
+                climateDbFileStream = await WebApiRequest.LoadFromATBWebService();
+                CsvReader csvReader = new CsvReader(climateDbFileStream);
+
+                while (!csvReader.EndOfStream())
+                {
+                    IDictionary<String, String> fields;
+                    fields = csvReader.readLine();
+
+                    if (String.IsNullOrEmpty(fields["name"]) || String.IsNullOrEmpty(fields["_id"])) continue;
+                    climateIds.Add(fields["name"], fields["_id"]);
+                }
+                return climateIds.Count;
+            }
+            
+            public ICollection<String> getClimateNames()
+            {
+                return climateIds.Keys;
+            }
+
+            public async Task<Climate> getClimate(String name, DateTime start, DateTime end, TimeStep step)
+            {
+                Climate _climate = climateInstances.ContainsKey(name) ? climateInstances[name] : new Climate(name, step);
+                climateInstances[name] = _climate;
+
+                await _climate.loadFromATBWebService(climateIds[name], start, end);
+                return _climate;
+            }
+        }
+
 
 
         /*!
@@ -135,6 +180,12 @@ namespace atbApi
             public Climate(TimeStep step)
             {
                 _step = step;
+            }
+
+            public Climate(String name, TimeStep step)
+            {
+                _step = step;
+                _name = name;
             }
 
             private int loadCsv(Stream stream)
@@ -210,6 +261,17 @@ namespace atbApi
             {
                 return loadCsv(await WebApiRequest.LoadFromATBWebService(location, tag, user, pass, start, end, this._step));
             }
+
+            public async Task<int> loadFromATBWebService(String dataObjId, DateTime start, DateTime end)
+            {
+                if (_start == null || _start > start || _end == null || _end < end)
+                {
+                    return loadCsv(await WebApiRequest.LoadFromATBWebService(dataObjId, start, end, this._step));
+                }
+                else return climateData.Count;
+            }
+
+
 
             public async Task<double> loadAltitudeFromATBWebService(Location location)
             {
