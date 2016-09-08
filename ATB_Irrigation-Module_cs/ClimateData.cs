@@ -189,6 +189,14 @@ namespace atbApi
             public DateTime? end { get { return this._end; } }
 
             /*!
+             * \brief   public readonly property to access the number of datasets in this instance
+             *
+             * \return  The last exception or null if no exception occured.
+             */
+
+            public int count { get { return this.climateData.Count; } }
+
+            /*!
              * \brief   public readonly property to access the last occured stream operations exception
              *
              * \return  The last exception or null if no exception occured.
