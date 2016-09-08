@@ -72,22 +72,29 @@ namespace atbApi
             }
         }
 
+        /*!
+         * \brief   climate database static class ist instantiated at library loading
+         *          contains all climate names and data
+         *
+         */
 
-        public class ClimateDb
+        public static class ClimateDb
         {
-            private IDictionary<String, String> climateIds = new Dictionary<String, String>();
-            private IDictionary<String, Climate> climateInstances = new Dictionary<String, Climate>();
-            private Stream climateDbFileStream;
+            private static IDictionary<String, String> climateIds = new Dictionary<String, String>();
+            private static IDictionary<String, Climate> climateInstances = new Dictionary<String, Climate>();
 
-            public ClimateDb()
+            /*!
+             * \brief   Initializes the instance.
+             *
+             *
+             * \return  A Task&lt;int&gt;
+             */
+
+            private static async Task<int> initializeInstance()
             {
-
-            }
-
-            public async Task<int> loadFromATBWebService()
-            {
-                climateDbFileStream = await WebApiRequest.LoadFromATBWebService();
-                CsvReader csvReader = new CsvReader(climateDbFileStream);
+                climateIds.Clear();
+                climateInstances.Clear();
+                CsvReader csvReader = new CsvReader(await WebApiRequest.LoadClimateIdsFromATBWebService());
 
                 while (!csvReader.EndOfStream())
                 {
@@ -99,22 +106,41 @@ namespace atbApi
                 }
                 return climateIds.Count;
             }
-            
-            public ICollection<String> getClimateNames()
+
+            /*!
+             * \brief   Gets climate names.
+             *
+             * \param   reinit  true to reinitialise.
+             *
+             * \return  The climate names.
+             */
+
+            public static async Task<ICollection<String>> getClimateNames(bool reinit)
             {
+                if (climateIds.Count == 0 || reinit == true) await initializeInstance();
                 return climateIds.Keys;
             }
 
-            public async Task<Climate> getClimate(String name, DateTime start, DateTime end, TimeStep step)
+            /*!
+             * \brief   Gets a climate.
+             *
+             * \param   name    The name.
+             * \param   start   The start Date/Time.
+             * \param   end     The end Date/Time.
+             * \param   step    Amount to increment by.
+             *
+             * \return  The climate.
+             */
+
+            public static async Task<Climate> getClimate(String name, DateTime start, DateTime end, TimeStep step)
             {
                 Climate _climate = climateInstances.ContainsKey(name) ? climateInstances[name] : new Climate(name, step);
                 climateInstances[name] = _climate;
 
-                await _climate.loadFromATBWebService(climateIds[name], start, end);
+                await _climate.loadClimateByIdFromATBWebService(climateIds[name], start, end);
                 return _climate;
             }
         }
-
 
 
         /*!
@@ -236,12 +262,12 @@ namespace atbApi
 
             public async Task<int> loadFromATBWebService(Location location, DateTime start, DateTime end)
             {
-                return loadCsv(await WebApiRequest.LoadFromATBWebService(location, start, end, this._step));
+                return loadCsv(await WebApiRequest.LoadClimateByLocationTagFromATBWebService(location, start, end, this._step));
             }
 
             public async Task<int> loadFromATBWebService(Location location, String tag, DateTime start, DateTime end)
             {
-                return loadCsv(await WebApiRequest.LoadFromATBWebService(location, tag, start, end, this._step));
+                return loadCsv(await WebApiRequest.LoadClimateByLocationTagFromATBWebService(location, tag, start, end, this._step));
             }
 
             /*!
@@ -257,16 +283,16 @@ namespace atbApi
              * \return  The number of datasets in this climate, a number of 0 means that there was an exception and no data read.
              */
 
-            public async Task<int> loadFromATBWebService(Location location, String tag, String user, String pass, DateTime start, DateTime end)
+            public async Task<int> loadClimateByLocationTagFromATBWebService(Location location, String tag, String user, String pass, DateTime start, DateTime end)
             {
-                return loadCsv(await WebApiRequest.LoadFromATBWebService(location, tag, user, pass, start, end, this._step));
+                return loadCsv(await WebApiRequest.LoadClimateByLocationTagFromATBWebService(location, tag, user, pass, start, end, this._step));
             }
 
-            public async Task<int> loadFromATBWebService(String dataObjId, DateTime start, DateTime end)
+            public async Task<int> loadClimateByIdFromATBWebService(String dataObjId, DateTime start, DateTime end)
             {
                 if (_start == null || _start > start || _end == null || _end < end)
                 {
-                    return loadCsv(await WebApiRequest.LoadFromATBWebService(dataObjId, start, end, this._step));
+                    return loadCsv(await WebApiRequest.LoadClimateByIdFromATBWebService(dataObjId, start, end, this._step));
                 }
                 else return climateData.Count;
             }

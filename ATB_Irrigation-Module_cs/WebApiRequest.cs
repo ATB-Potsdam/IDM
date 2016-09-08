@@ -55,17 +55,17 @@ namespace local
         private const string DefaultTag = "public_data";
 
 
-        internal static async Task<Stream> LoadFromATBWebService(Location location, DateTime start, DateTime end, TimeStep step)
+        internal static async Task<Stream> LoadClimateByLocationTagFromATBWebService(Location location, DateTime start, DateTime end, TimeStep step)
         {
-            return await LoadFromATBWebService(location, DefaultTag, SpongeJsUser, SpongeJsPass, start, end, step);
+            return await LoadClimateByLocationTagFromATBWebService(location, DefaultTag, SpongeJsUser, SpongeJsPass, start, end, step);
         }
 
-        internal static async Task<Stream> LoadFromATBWebService(Location location, String tag, DateTime start, DateTime end, TimeStep step)
+        internal static async Task<Stream> LoadClimateByLocationTagFromATBWebService(Location location, String tag, DateTime start, DateTime end, TimeStep step)
         {
-            return await LoadFromATBWebService(location, tag, SpongeJsUser, SpongeJsPass, start, end, step);
+            return await LoadClimateByLocationTagFromATBWebService(location, tag, SpongeJsUser, SpongeJsPass, start, end, step);
         }
         
-        internal static async Task<Stream> LoadFromATBWebService(Location location, String tag, String user, String pass, DateTime start, DateTime end, TimeStep step)
+        internal static async Task<Stream> LoadClimateByLocationTagFromATBWebService(Location location, String tag, String user, String pass, DateTime start, DateTime end, TimeStep step)
         {
             try
             {
@@ -86,26 +86,13 @@ namespace local
             }
         }
 
-        /*!
-         * Loads data by dataObjId from the ATB web service.
-         *
-         * \author  Hunstock
-         * \date    05.09.2016
-         *
-         * \param   dataObjId   Identifier for the data object.
-         * \param   start       The start Date/Time.
-         * \param   end         The end Date/Time.
-         * \param   step        Amount to increment by.
-         *
-         * \return  The data that was read from a terabytes web service.
-         */
 
-        internal static async Task<Stream> LoadFromATBWebService(String dataObjId, DateTime start, DateTime end, TimeStep step)
+        internal static async Task<Stream> LoadClimateByIdFromATBWebService(String dataObjId, DateTime start, DateTime end, TimeStep step)
         {
-            return await LoadFromATBWebService(dataObjId, SpongeJsUser, SpongeJsPass, start, end, step);
+            return await LoadClimateByIdFromATBWebService(dataObjId, SpongeJsUser, SpongeJsPass, start, end, step);
         }
 
-        internal static async Task<Stream> LoadFromATBWebService(String dataObjId, String user, String pass, DateTime start, DateTime end, TimeStep step)
+        internal static async Task<Stream> LoadClimateByIdFromATBWebService(String dataObjId, String user, String pass, DateTime start, DateTime end, TimeStep step)
         {
             try
             {
@@ -124,12 +111,13 @@ namespace local
             }
         }
 
-        internal static async Task<Stream> LoadFromATBWebService()
+
+        internal static async Task<Stream> LoadClimateIdsFromATBWebService()
         {
-            return await LoadFromATBWebService(DefaultTag, SpongeJsUser, SpongeJsPass);
+            return await LoadClimateIdsFromATBWebService(DefaultTag, SpongeJsUser, SpongeJsPass);
         }
 
-        internal static async Task<Stream> LoadFromATBWebService(String tag, String user, String pass)
+        internal static async Task<Stream> LoadClimateIdsFromATBWebService(String tag, String user, String pass)
         {
             try
             {

@@ -161,17 +161,21 @@ Public Class Form1
         '      Dim nextSoilConditions As atbApi.data.SoilConditions = transpirationResult.lastConditions
     End Sub
 
-    Dim ClimateDb As atbApi.data.ClimateDb = New atbApi.data.ClimateDb()
-    Dim first = 1
 
     Private Async Sub Button8_Click(sender As Object, e As EventArgs) Handles Button8.Click
-        If first = 1 Then
-            first = 0
-            Await ClimateDb.loadFromATBWebService()
-        End If
+        Dim climateNames = Await atbApi.data.ClimateDb.getClimateNames(False)
+        For i = 0 To climateNames.Count - 1
+            ComboBox3.Items.Add(climateNames(i))
+        Next
 
-        Dim seedDate As DateTime = New DateTime(2012, 4, 12, 0, 0, 0, DateTimeKind.Utc)
-        Dim harvestDate As DateTime = New DateTime(2012, 10, 5, 0, 0, 0, DateTimeKind.Utc)
-        Dim testClimate As Task(Of atbApi.data.Climate) = ClimateDb.getClimate("DWD_04371_Salzuflen_Bad", seedDate, harvestDate, atbApi.data.TimeStep.day)
+        ComboBox3.Sorted = True
+
+        'Dim seedDate As DateTime = New DateTime(2012, 4, 12, 0, 0, 0, DateTimeKind.Utc)
+        'Dim harvestDate As DateTime = New DateTime(2012, 10, 5, 0, 0, 0, DateTimeKind.Utc)
+        'Dim testClimate As Task(Of atbApi.data.Climate) = atbApi.data.ClimateDb.getClimate("DWD_04371_Salzuflen_Bad", seedDate, harvestDate, atbApi.data.TimeStep.day)
+    End Sub
+
+    Private Sub ComboBox3_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ComboBox3.SelectedIndexChanged
+
     End Sub
 End Class
