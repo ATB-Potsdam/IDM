@@ -108,7 +108,7 @@ namespace atbApi
             }
 
             /*!
-             * \brief   Gets climate names.
+             * \brief   Initialize this instance Gets climate names.
              *
              * \param   reinit  true to reinitialise.
              *
@@ -134,10 +134,10 @@ namespace atbApi
 
             public static async Task<Climate> getClimate(String name, DateTime start, DateTime end, TimeStep step)
             {
-                Climate _climate = climateInstances.ContainsKey(name) ? climateInstances[name] : new Climate(name, step);
+                Climate _climate = climateInstances.ContainsKey(name) ? climateInstances[name] : new Climate(climateIds[name], name, step);
                 climateInstances[name] = _climate;
 
-                await _climate.loadClimateByIdFromATBWebService(climateIds[name], start, end);
+                await _climate.loadClimateByIdFromATBWebService(start, end);
                 return _climate;
             }
         }
@@ -154,6 +154,9 @@ namespace atbApi
             /*! vector with data. */
             private IDictionary<DateTime, ClimateValues> climateData = new Dictionary<DateTime, ClimateValues>();
             private String _name;
+            private String _dataObjId;
+            private Double _altitude;
+            private Location _location;
             private Exception _e;
             private TimeStep _step;
             private DateTime? _start;
@@ -211,15 +214,23 @@ namespace atbApi
              * \endcode
              */
 
-            public Climate(TimeStep step)
+            public Climate(Stream climateFileStream, TimeStep step)
             {
                 _step = step;
+                loadCsv(climateFileStream);
             }
 
             public Climate(String name, TimeStep step)
             {
                 _step = step;
                 _name = name;
+            }
+
+            public Climate(String name, String dataObjId, TimeStep step)
+            {
+                _step = step;
+                _name = name;
+                _dataObjId = dataObjId;
             }
 
             private int loadCsv(Stream stream)
@@ -237,6 +248,10 @@ namespace atbApi
                         if (fields == null) continue;
                         if (String.IsNullOrEmpty(fields["dataObjName"])) continue;
                         if (String.IsNullOrEmpty(_name)) _name = fields["dataObjName"];
+                        if (String.IsNullOrEmpty(_dataObjId) && !String.IsNullOrEmpty(fields["dataObjId"]))
+                        {
+                            _dataObjId = fields["dataObjId"];
+                        }
                         //avoid to mix multiple stations, but for "nearest" it is nessecary
                         //if (!_name.Equals(fields["dataObjName"])) continue;
 
@@ -256,26 +271,21 @@ namespace atbApi
                 }
             }
 
-            /*!
-             * \brief   Function to load external csv Stream and parse as climate data.
-             *
-             * \code{.unparsed}
-             * \endcode
-             */
-
-            public int loadFromFileStream(Stream climateFileStream)
+            public async Task<int> loadClimateFromATBWebService(DateTime start, DateTime end)
             {
-                return loadCsv(climateFileStream);
+                return loadCsv(await WebApiRequest.LoadClimateByLocationTagFromATBWebService(_location, start, end, this._step));
             }
 
-            public async Task<int> loadFromATBWebService(Location location, DateTime start, DateTime end)
+            public async Task<int> loadClimateByLocationFromATBWebService(Location location, DateTime start, DateTime end)
             {
-                return loadCsv(await WebApiRequest.LoadClimateByLocationTagFromATBWebService(location, start, end, this._step));
+                _location = location;
+                return loadCsv(await WebApiRequest.LoadClimateByLocationTagFromATBWebService(_location, start, end, this._step));
             }
 
-            public async Task<int> loadFromATBWebService(Location location, String tag, DateTime start, DateTime end)
+            public async Task<int> loadClimateByLocationTagFromATBWebService(Location location, String tag, DateTime start, DateTime end)
             {
-                return loadCsv(await WebApiRequest.LoadClimateByLocationTagFromATBWebService(location, tag, start, end, this._step));
+                _location = location;
+                return loadCsv(await WebApiRequest.LoadClimateByLocationTagFromATBWebService(_location, tag, start, end, this._step));
             }
 
             /*!
@@ -293,14 +303,15 @@ namespace atbApi
 
             public async Task<int> loadClimateByLocationTagFromATBWebService(Location location, String tag, String user, String pass, DateTime start, DateTime end)
             {
+                _location = location;
                 return loadCsv(await WebApiRequest.LoadClimateByLocationTagFromATBWebService(location, tag, user, pass, start, end, this._step));
             }
 
-            public async Task<int> loadClimateByIdFromATBWebService(String dataObjId, DateTime start, DateTime end)
+            public async Task<int> loadClimateByIdFromATBWebService(DateTime start, DateTime end)
             {
                 if (_start == null || _start > start || _end == null || _end < end)
                 {
-                    return loadCsv(await WebApiRequest.LoadClimateByIdFromATBWebService(dataObjId, start, end, this._step));
+                    return loadCsv(await WebApiRequest.LoadClimateByIdFromATBWebService(_dataObjId, start, end, this._step));
                 }
                 else return climateData.Count;
             }
@@ -309,12 +320,14 @@ namespace atbApi
 
             public async Task<double> loadAltitudeFromATBWebService(Location location)
             {
-                return await WebApiRequest.LoadAltitudeFromATBWebService(location);
+                _altitude = await WebApiRequest.LoadAltitudeFromATBWebService(location);
+                return _altitude;
             }
 
             public async Task<double> loadAltitudeFromATBWebService(Location location, String user, String pass)
             {
-                return await WebApiRequest.LoadAltitudeFromATBWebService(location, user, pass);
+                _altitude = await WebApiRequest.LoadAltitudeFromATBWebService(location, user, pass);
+                return _altitude;
             }
 
 

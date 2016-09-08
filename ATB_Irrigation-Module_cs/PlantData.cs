@@ -122,7 +122,7 @@ namespace atbApi
              * Dim plantDb As atbApi.data.PlantDb = New atbApi.data.PlantDb(fs)
              * 'important: close fileStream after PlantDb is created
              * fs.Close()
-             * 'create new plant and provide yout own plantDb to constructor
+             * 'create new plant and provide your own plantDb to constructor
              * Dim myPlant As atbApi.data.Plant = New atbApi.data.Plant("CROPWAT_80_Crop_data_CITRUS_70p_ca_bare", plantDb)
              * \endcode
              */
