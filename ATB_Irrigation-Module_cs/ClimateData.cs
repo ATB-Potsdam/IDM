@@ -74,7 +74,10 @@ namespace atbApi
 
         /*!
          * \brief   climate database static class ist instantiated at library loading
-         *          contains all climate names and data
+         *          contains all climate names/_ids and data
+         *          
+         *          This class is bound to a Sponge-JS web service from where the climate _ids and
+         *          names are loaded at initialisation.
          *
          */
 
@@ -83,18 +86,11 @@ namespace atbApi
             private static IDictionary<String, String> climateIds = new Dictionary<String, String>();
             private static IDictionary<String, Climate> climateInstances = new Dictionary<String, Climate>();
 
-            /*!
-             * \brief   Initializes the instance.
-             *
-             *
-             * \return  A Task&lt;int&gt;
-             */
-
-            private static async Task<int> initializeInstance()
+            private static async Task<int> initializeInstance(String tag)
             {
                 climateIds.Clear();
                 climateInstances.Clear();
-                CsvReader csvReader = new CsvReader(await WebApiRequest.LoadClimateIdsFromATBWebService());
+                CsvReader csvReader = new CsvReader(await WebApiRequest.LoadClimateIdsFromATBWebService(tag));
 
                 while (!csvReader.EndOfStream())
                 {
@@ -108,16 +104,18 @@ namespace atbApi
             }
 
             /*!
-             * \brief   Initialize this instance Gets climate names.
+             * \brief   Initialize this instance, if not initialized and loads
+             *          all climate names from the web service.
              *
              * \param   reinit  true to reinitialise.
+             * \param   tag     set to prefer a different tag, can be null for default tag
              *
-             * \return  The climate names.
+             * \return  The list of climate names.
              */
 
-            public static async Task<ICollection<String>> getClimateNames(bool reinit)
+            public static async Task<ICollection<String>> getClimateNames(bool reinit, String tag)
             {
-                if (climateIds.Count == 0 || reinit == true) await initializeInstance();
+                if (climateIds.Count == 0 || reinit == true) await initializeInstance(tag);
                 return climateIds.Keys;
             }
 
@@ -127,7 +125,7 @@ namespace atbApi
              * \param   name    The name.
              * \param   start   The start Date/Time.
              * \param   end     The end Date/Time.
-             * \param   step    Amount to increment by.
+             * \param   step    requested time step
              *
              * \return  The climate.
              */
@@ -155,7 +153,7 @@ namespace atbApi
             private IDictionary<DateTime, ClimateValues> climateData = new Dictionary<DateTime, ClimateValues>();
             private String _name;
             private String _dataObjId;
-            private Double _altitude;
+            private Double? _altitude;
             private Location _location;
             private Exception _e;
             private TimeStep _step;
@@ -194,7 +192,7 @@ namespace atbApi
             /*!
              * \brief   public readonly property to access the number of datasets in this instance
              *
-             * \return  The last exception or null if no exception occured.
+             * \return  the number of datasets
              */
 
             public int count { get { return this.climateData.Count; } }
@@ -208,10 +206,10 @@ namespace atbApi
             public Exception lastException { get { return this._e; } }
 
             /*!
-             * \brief   Constructor to create empty climate to be filled.
+             * \brief   Constructor to create climate and immediate load data from provided fileStream.
              *
-             * \code{.unparsed}
-             * \endcode
+             * \param   climateFileStream   File stream with csv data to load. The name, location and altitude are taken from this data.
+             * \param   step                incremental time step of the data
              */
 
             public Climate(Stream climateFileStream, TimeStep step)
@@ -220,11 +218,26 @@ namespace atbApi
                 loadCsv(climateFileStream);
             }
 
+            /*!
+             * \brief   Constructor to create empty climate to be filled.
+             *
+             * \param   name    The name of the climate.
+             * \param   step    incremental time step of the data
+             */
+
             public Climate(String name, TimeStep step)
             {
                 _step = step;
                 _name = name;
             }
+
+            /*!
+             * \brief   Constructor to create empty climate to be filled.
+             * 
+             * \param   name        The name of the climate.
+             * \param   dataObjId   Database _id of the data object. With this _id the needed data is requested from the ATB web service
+             * \param   step        incremental time step of the data
+             */
 
             public Climate(String name, String dataObjId, TimeStep step)
             {
@@ -271,44 +284,41 @@ namespace atbApi
                 }
             }
 
-            public async Task<int> loadClimateFromATBWebService(DateTime start, DateTime end)
-            {
-                return loadCsv(await WebApiRequest.LoadClimateByLocationTagFromATBWebService(_location, start, end, this._step));
-            }
-
-            public async Task<int> loadClimateByLocationFromATBWebService(Location location, DateTime start, DateTime end)
-            {
-                _location = location;
-                return loadCsv(await WebApiRequest.LoadClimateByLocationTagFromATBWebService(_location, start, end, this._step));
-            }
-
-            public async Task<int> loadClimateByLocationTagFromATBWebService(Location location, String tag, DateTime start, DateTime end)
-            {
-                _location = location;
-                return loadCsv(await WebApiRequest.LoadClimateByLocationTagFromATBWebService(_location, tag, start, end, this._step));
-            }
-
             /*!
              * \brief   Loads climate data per http request from the ATB/runlevel3 web service.
              *
-             * \param   location    The location.
-             * \param   tag         The tag.
-             * \param   user        The user.
-             * \param   pass        The pass.
-             * \param   start       The start Date/Time.
-             * \param   end         The end Date/Time.
+             * \param   location    The location to get nearest station data from.
+             * \param   tag         The tag to prefer climate data with this tag, can be null to use default tag.
+             * \param   start       The start Date/Time of requested data.
+             * \param   end         The end Date/Time of requested data.
              *
              * \return  The number of datasets in this climate, a number of 0 means that there was an exception and no data read.
              */
 
-            public async Task<int> loadClimateByLocationTagFromATBWebService(Location location, String tag, String user, String pass, DateTime start, DateTime end)
+            public async Task<int> loadClimateByLocationTagFromATBWebService(Location location, String tag, DateTime start, DateTime end)
             {
                 _location = location;
-                return loadCsv(await WebApiRequest.LoadClimateByLocationTagFromATBWebService(location, tag, user, pass, start, end, this._step));
+                if (_start == null || _start > start || _end == null || _end < end)
+                {
+                    return loadCsv(await WebApiRequest.LoadClimateByLocationTagFromATBWebService(_location, tag, start, end, this._step));
+                }
+                else return climateData.Count;
             }
+
+            /*!
+             * \brief   Loads climate data per http request from the ATB/runlevel3 web service.
+             *          The dataObjId has to be provided in advance with the contructor to use this method.
+             *
+             * \param   start       The start Date/Time of requested data.
+             * \param   end         The end Date/Time of requested data.
+             *
+             * \return  The number of datasets in this climate, a number of 0 means that there was an exception and no data read.
+             */
 
             public async Task<int> loadClimateByIdFromATBWebService(DateTime start, DateTime end)
             {
+                if (String.IsNullOrEmpty(_dataObjId)) return 0;
+
                 if (_start == null || _start > start || _end == null || _end < end)
                 {
                     return loadCsv(await WebApiRequest.LoadClimateByIdFromATBWebService(_dataObjId, start, end, this._step));
@@ -316,18 +326,21 @@ namespace atbApi
                 else return climateData.Count;
             }
 
-
+            /*!
+             * \brief   Loads climate station altitude per http request from the ATB/runlevel3 web service.
+             *
+             * \param   location    The location to get altitude for.
+             *
+             * \return  The altitude at this location.
+             */
 
             public async Task<double> loadAltitudeFromATBWebService(Location location)
             {
-                _altitude = await WebApiRequest.LoadAltitudeFromATBWebService(location);
-                return _altitude;
-            }
+                if (_altitude.HasValue) return (double)_altitude;
 
-            public async Task<double> loadAltitudeFromATBWebService(Location location, String user, String pass)
-            {
-                _altitude = await WebApiRequest.LoadAltitudeFromATBWebService(location, user, pass);
-                return _altitude;
+                _location = location;
+                _altitude = await WebApiRequest.LoadAltitudeFromATBWebService(location);
+                return (double)_altitude;
             }
 
 

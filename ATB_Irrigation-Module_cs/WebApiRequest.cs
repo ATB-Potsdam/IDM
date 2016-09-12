@@ -23,25 +23,15 @@ using atbApi.data;
 
 namespace local
 {
-    internal sealed class LoginCookieCache
+    internal static class LoginCookieCache
     {
-        private static readonly LoginCookieCache instance = new LoginCookieCache();
         private static CookieContainer cookieContainer = new CookieContainer();
 
-        public CookieContainer getCookieContainer()
+        internal static CookieContainer getCookieContainer()
         {
             return cookieContainer;
         }
-
-        public static LoginCookieCache Instance
-        {
-            get
-            {
-                return instance;
-            }
-        }
     }
-
 
     internal static class WebApiRequest
     {
@@ -50,35 +40,30 @@ namespace local
         private const String SpongeJsUrlDataId = "https://agrohyd-api-dev.runlevel3.de/ParameterSetData/getByDataObjId/{0}/date%3A{1}?end=date%3A{2}&step=date%3A{3}&format=csv";
         private const String SpongeJsUrlAllIds = "https://agrohyd-api-dev.runlevel3.de/DataObjRaw/getIdNamesByType/climate?tag={0}&format=csv";
         private const String SpongeJsUrlAltitude = "https://agrohyd-api-dev.runlevel3.de/Tools/getAltitude/{0}/{1}";
-        private const String SpongeJsUser = "irri_mod_user";
-        private const String SpongeJsPass = "irri_mod_pass";
+        private static String SpongeJsUser = "irri_mod_user";
+        private static String SpongeJsPass = "irri_mod_pass";
         private const string DefaultTag = "public_data";
 
-
-        internal static async Task<Stream> LoadClimateByLocationTagFromATBWebService(Location location, DateTime start, DateTime end, TimeStep step)
+        internal static void SetUserPass(String user, String pass)
         {
-            return await LoadClimateByLocationTagFromATBWebService(location, DefaultTag, SpongeJsUser, SpongeJsPass, start, end, step);
+            SpongeJsUser = user;
+            SpongeJsPass = pass;
         }
 
         internal static async Task<Stream> LoadClimateByLocationTagFromATBWebService(Location location, String tag, DateTime start, DateTime end, TimeStep step)
-        {
-            return await LoadClimateByLocationTagFromATBWebService(location, tag, SpongeJsUser, SpongeJsPass, start, end, step);
-        }
-        
-        internal static async Task<Stream> LoadClimateByLocationTagFromATBWebService(Location location, String tag, String user, String pass, DateTime start, DateTime end, TimeStep step)
         {
             try
             {
                 String url = String.Format(
                     SpongeJsUrlDataLocation,
-                    tag,
+                    String.IsNullOrEmpty(tag) ? DefaultTag : tag,
                     location.lon.ToString(CultureInfo.InvariantCulture),
                     location.lat.ToString(CultureInfo.InvariantCulture),
                     start.ToUniversalTime().ToString("s") + "Z",
                     end.ToUniversalTime().ToString("s") + "Z",
                     step.ToString()
                 );
-                return await WebApiRequest.ExecuteWebApiRequest(url, user, pass);
+                return await WebApiRequest.ExecuteWebApiRequest(url);
             }
             catch
             {
@@ -89,11 +74,6 @@ namespace local
 
         internal static async Task<Stream> LoadClimateByIdFromATBWebService(String dataObjId, DateTime start, DateTime end, TimeStep step)
         {
-            return await LoadClimateByIdFromATBWebService(dataObjId, SpongeJsUser, SpongeJsPass, start, end, step);
-        }
-
-        internal static async Task<Stream> LoadClimateByIdFromATBWebService(String dataObjId, String user, String pass, DateTime start, DateTime end, TimeStep step)
-        {
             try
             {
                 String url = String.Format(
@@ -103,7 +83,7 @@ namespace local
                     end.ToUniversalTime().ToString("s") + "Z",
                     step.ToString()
                 );
-                return await WebApiRequest.ExecuteWebApiRequest(url, user, pass);
+                return await WebApiRequest.ExecuteWebApiRequest(url);
             }
             catch
             {
@@ -111,21 +91,15 @@ namespace local
             }
         }
 
-
-        internal static async Task<Stream> LoadClimateIdsFromATBWebService()
-        {
-            return await LoadClimateIdsFromATBWebService(DefaultTag, SpongeJsUser, SpongeJsPass);
-        }
-
-        internal static async Task<Stream> LoadClimateIdsFromATBWebService(String tag, String user, String pass)
+        internal static async Task<Stream> LoadClimateIdsFromATBWebService(String tag)
         {
             try
             {
                 String url = String.Format(
                     SpongeJsUrlAllIds,
-                    tag
+                    String.IsNullOrEmpty(tag) ? DefaultTag : tag
                 );
-                return await WebApiRequest.ExecuteWebApiRequest(url, user, pass);
+                return await WebApiRequest.ExecuteWebApiRequest(url);
             }
             catch
             {
@@ -136,11 +110,6 @@ namespace local
 
         internal static async Task<double> LoadAltitudeFromATBWebService(Location location)
         {
-            return await LoadAltitudeFromATBWebService(location, SpongeJsUser, SpongeJsPass);
-        }
-
-        internal static async Task<double> LoadAltitudeFromATBWebService(Location location, String user, String pass)
-        {
             try
             {
                 String url = String.Format(
@@ -148,7 +117,7 @@ namespace local
                     location.lon.ToString(CultureInfo.InvariantCulture),
                     location.lat.ToString(CultureInfo.InvariantCulture)
                 );
-                Stream webResponse = await ExecuteWebApiRequest(url, user, pass);
+                Stream webResponse = await ExecuteWebApiRequest(url);
                 StreamReader altReader = new StreamReader(webResponse);
                 String altResult = altReader.ReadToEnd();
                 if (!altResult.Contains("result")) return 0;
@@ -162,13 +131,13 @@ namespace local
         }
 
 
-        internal static async Task<Stream> ExecuteWebApiRequest(String url, String user, String pass)
+        internal static async Task<Stream> ExecuteWebApiRequest(String url)
         {
             try
             {
                 HttpWebRequest req = (HttpWebRequest)WebRequest.Create(url);
-                req.Credentials = new NetworkCredential(user, pass);
-                req.CookieContainer = LoginCookieCache.Instance.getCookieContainer();
+                req.Credentials = new NetworkCredential(SpongeJsUser, SpongeJsPass);
+                req.CookieContainer = LoginCookieCache.getCookieContainer();
                 WebResponse res = await Task<WebResponse>.Factory.FromAsync(req.BeginGetResponse, req.EndGetResponse, req);
                 return res.GetResponseStream();
             }
