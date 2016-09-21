@@ -153,7 +153,6 @@ namespace atbApi
             private IDictionary<DateTime, ClimateValues> climateData = new Dictionary<DateTime, ClimateValues>();
             private String _name;
             private String _dataObjId;
-            private Double? _altitude;
             private Location _location;
             private Exception _e;
             private TimeStep _step;
@@ -190,11 +189,17 @@ namespace atbApi
             public DateTime? end { get { return this._end; } }
 
             /*!
+             * \brief   public readonly property to access the location
+             *
+             * \return  The location object of climate station.
+             */
+            public Location location { get { return this._location; } }
+
+            /*!
              * \brief   public readonly property to access the number of datasets in this instance
              *
              * \return  the number of datasets
              */
-
             public int count { get { return this.climateData.Count; } }
 
             /*!
@@ -336,11 +341,11 @@ namespace atbApi
 
             public async Task<double> loadAltitudeFromATBWebService(Location location)
             {
-                if (_altitude.HasValue) return (double)_altitude;
+                if (_location.alt.HasValue) return (double)_location.alt;
 
                 _location = location;
-                _altitude = await WebApiRequest.LoadAltitudeFromATBWebService(location);
-                return (double)_altitude;
+                _location.alt = await WebApiRequest.LoadAltitudeFromATBWebService(location);
+                return (double)_location.alt;
             }
 
 

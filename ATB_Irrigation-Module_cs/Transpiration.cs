@@ -43,6 +43,7 @@ using System.Diagnostics;
 using atbApi;
 using atbApi.data;
 using local;
+using System.Threading.Tasks;
 
 /*! 
  * \brief   namespace for all exported classes and structures
@@ -206,8 +207,6 @@ namespace atbApi
         public double yieldReductionMid_season { get; set; }
         /*! yieldReductionTcLate_season, unit: "none", description: Yield reduction factor due to water stress in late_season stage of plant growing for E plus T calculation. */
         public double yieldReductionLate_season { get; set; }
-        /*! kcIniResult, description: Intermediate values and result of the "kcIni" model. */
-        public KcIniResult kcIniResult { get; set; }
 
         /*! dailyValues, description: Each line contains values for one day from "seedDate" to "harvestDate". This includes input values, intermediate results, evaporation, transpiration, evapotranspiration and soil water balance. */
         public IDictionary<DateTime, ETDailyValues> dailyValues { get; set; }
@@ -282,7 +281,7 @@ namespace atbApi
         public double soilStorageEff { get; set; }
     }
 
-
+    
     /*!
      * \brief   The main functions of the irrigation module. Different types of calculation are provided.
      *
@@ -437,6 +436,7 @@ namespace atbApi
             var maxDepth = Math.Min(1.999999999999, args.soil.maxDepth);
             var soilSetMax = args.soil.getValues(maxDepth);
             var tawMax = 1000 * (soilSetMax.Qfc - soilSetMax.Qwp) * maxDepth;
+            var et0Result = new Et0Result();
 
             for (DateTime loopDate = args.start; loopDate <= args.end; loopDate = loopDate.AddDays(1))
             {
@@ -449,7 +449,8 @@ namespace atbApi
                 var plantSet = args.plant.getValues(plantDay);
                 var stageName = Enum.GetName(plantSet.stage.GetType(), plantSet.stage.Value);
                 var soilSet = args.soil.getValues(Math.Min(args.lastConditions.zr, maxDepth));
-                loopResult.et0 = Et0.Et0Calc(args.climate, loopDate, args.location, args.et0PmArgs, args.et0HgArgs).et0;
+                if (!Et0.Et0Calc(args.climate, loopDate, args.location, args.et0PmArgs, args.et0HgArgs, ref et0Result)) return false;
+                loopResult.et0 = (double)et0Result.et0;
 
                 loopResult.irrigation = 0.0;
                 loopResult.netIrrigation = 0.0;

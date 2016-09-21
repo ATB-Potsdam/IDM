@@ -4,7 +4,40 @@
  * \brief   Implements the models for the calculation of reference evapotranspiration.
  *          Two calculation approaches are provided: Penman-Monteith Equation if nessecary climate data is avilable,
  *          Hargreaves Algorith can be used else.
- *  
+ *
+ * 
+ * \code{.unparsed}
+            //example code to perform an et0 calculation for a single day
+            //create climate class instance
+            Climate climate = new Climate("test", TimeStep.day);
+            //set date for calculation
+            DateTime testDate = new DateTime(2015, 6, 12);
+            //create values for that date
+            ClimateValues testValues = new ClimateValues()
+            {
+                min_temp = 3.5,
+                max_temp = 21.7,
+                mean_temp = 11,
+                precipitation = 0,
+                windspeed = 2.6,
+                humidity = 45,
+                sunshine_duration = 4.7
+            };
+            //add values to climate
+            climate.addValues(testDate, testValues);
+            //create a location
+            Location testLocation = new Location(42, -94, 330);
+
+            //create result
+            Et0Result testResult = new Et0Result();
+            //do calculation - is result valid?
+            if (Et0.Et0Calc(climate, testDate, testLocation, ref testResult))
+            {
+                return testResult.et0;
+            }
+            return null;
+ * \endcode
+ *         
  * \author  Hunstock
  * \date    15.08.2015
  */
@@ -20,57 +53,129 @@ using local;
 
 namespace atbApi
 {
+    /*!
+     * \brief   Regression coefficients for ET0 calculation with Penman/Monteith.
+     *          have to provided for any calculation
+     *          can be reused for following calculations
+     *
+     */
+
     public class Et0PmArgs
     {
-        public double _as { get; set; }
-        public double _bs { get; set; }
+        private double __as;
+        private double __bs;
+
+        /*! read only property to access _as value */
+        public double _as { get { return __as; } }
+        /*! read only property to access _bs value */
+        public double _bs { get { return __bs; } }
+
+        /*!
+         * \brief   Default constructor using default regression coefficients
+         *          as: default: 0.25, (FAO56 paper)
+         *          bs: default: 0.5, (FAO56 paper)
+         *
+         */
 
         public Et0PmArgs()
         {
-            _as = 0.25;
-            _bs = 0.5;
+            __as = 0.25;
+            __bs = 0.5;
         }
+
+        /*!
+         * \brief   Custom constructor with self defined regression coefficients.
+         *
+         * \param   _as The "as" coefficient.
+         * \param   _bs The "bs" coefficient.
+         */
 
         public Et0PmArgs(double _as, double _bs)
         {
-            this._as = _as;
-            this._bs = _bs;
+            this.__as = _as;
+            this.__bs = _bs;
         }
     }
 
+    /*!
+     * \brief   Regression coefficients for ET0 calculation with Hargreaves method.
+     *          have to provided for any calculation
+     *          can be reused for following calculations
+     *
+     */
+
     public class Et0HgArgs
     {
-        public double _ct { get; set; }
-        public double _ch { get; set; }
-        public double _eh { get; set; }
+        private double __ct;
+        private double __ch;
+        private double __eh;
+
+        /*! read only property to access _ct value */
+        public double _ct { get { return __ct; } }
+        /*! read only property to access _ch value */
+        public double _ch { get { return __ch; } }
+        /*! read only property to access _eh value */
+        public double _eh { get { return __eh; } }
+
+        /*!
+         * \brief   Default constructor using default regression coefficients
+         *          ct: default: 17.8, Empirical temperature coefficient (Hargreaves 1994)
+         *          ch: default: 0.0023, Empirical Hargreaves coefficient (Hargreaves 1994)
+         *          eh: default: 0.5, Empirical hargreaves exponent (Hargreaves 1994)
+         *
+         */
 
         public Et0HgArgs()
         {
-            _ct = 17.8;
-            _ch = 0.0023;
-            _eh = 0.5;
+            __ct = 17.8;
+            __ch = 0.0023;
+            __eh = 0.5;
         }
+
+        /*!
+         * \brief   Custom constructor with self defined regression coefficients.
+         *
+         * \param   _ct     Empirical temperature coefficient, recommended default value of 17.8 (Hargreaves 1994)
+         * \param   _ch     Empirical Hargreaves coefficient, recommended default value of 0.0023 (Hargreaves 1994)
+         * \param   _eh     Empirical hargreaves exponent, recommended default value of 0.5 (Hargreaves 1994)
+         */
 
         public Et0HgArgs(double _ct, double _ch, double _eh)
         {
-            this._ct = _ct;
-            this._ch = _ch;
-            this._eh = _eh;
+            this.__ct = _ct;
+            this.__ch = _ch;
+            this.__eh = _eh;
         }
     }
 
 
     /*!
-     * \brief   Encapsulates the result of a ET0 calculation.
+     * \brief   Encapsulates the result of an ET0 calculation.
      *
      */
 
     public class Et0Result
     {
-        /*! , unit: "MJ m-² day-¹", description: Calculated extraterrestrial radiation. */
-        public double ra { get; set; }
-        /*! , unit: "mm", description: Calculated ET0 value. */
-        public double et0 { get; set; }
+        /*! extraterrestrial radiation, unit: "MJ m-² day-¹", description: Calculated extraterrestrial radiation. */
+        public Double? ra { get; set; }
+        /*! reference evapotranspiration, unit: "mm", description: Calculated ET0 value. */
+        public Double? et0 { get; set; }
+
+        /*!
+         * \brief   Empty constructor, initializes result without values.
+         *
+         */
+
+        public Et0Result()
+        {
+        }
+
+        /*!
+         * \brief   Constructor creates result with values.
+         *
+         * \param   ra  The ra value.
+         * \param   et0 The et0 value.
+         */
 
         public Et0Result(double ra, double et0)
         {
@@ -124,13 +229,17 @@ namespace atbApi
 
     public static class Et0
     {
-        public static Et0Result Et0Calc(
+        private static Et0PmArgs _et0PmArgsDefault = new Et0PmArgs();
+        private static Et0HgArgs _et0HgArgsDefault = new Et0HgArgs();
+
+        public static bool Et0Calc(
             Climate climate,
             DateTime date,
-            Location location
+            Location location,
+            ref Et0Result result
         )
         {
-            return Et0Calc(climate, date, location, new Et0PmArgs(), new Et0HgArgs());
+            return Et0Calc(climate, date, location, _et0PmArgsDefault, _et0HgArgsDefault, ref result);
         }
 
         /*!
@@ -145,28 +254,29 @@ namespace atbApi
          * \return  An Et0Result structure.
          */
 
-        public static Et0Result Et0Calc(
+        public static bool Et0Calc(
             Climate climate,
             DateTime date,
             Location location,
             Et0PmArgs et0PmArgs,
-            Et0HgArgs et0HgArgs
+            Et0HgArgs et0HgArgs,
+            ref Et0Result result
         )
         {
             var climateSet = climate.getValues(date);
 
             //check availability of values
-            if (climateSet == null) return null;
+            if (climateSet == null) return false;
             if (
-                   climateSet.max_temp != null
-                && climateSet.min_temp != null
-                && climateSet.humidity != null
-                && (climateSet.Rs != null || climateSet.sunshine_duration != null)
+                   climateSet.max_temp.HasValue
+                && climateSet.min_temp.HasValue
+                && climateSet.humidity.HasValue
+                && (climateSet.Rs.HasValue || climateSet.sunshine_duration.HasValue)
             )
                 //data sufficient for Penman-Monteith
-                return Et0CalcPm(climate, date, location, et0PmArgs);
+                return Et0CalcPm(climate, date, location, et0PmArgs, ref result);
             //use Hargreaves
-            return Et0CalcHg(climate, date, location, et0HgArgs);
+            return Et0CalcHg(climate, date, location, et0HgArgs, ref result);
         }
 
 
@@ -177,42 +287,54 @@ namespace atbApi
          * \param   climate     Use this dataset with climate data.
          * \param   date        Date for ET0 calculation.
          * \param   location    The location for calculation, latitude and altitude are used.
-         * \param   _as         Regression coefficient for calculation of global radiation. If omitted, FAO recommended default value of 0.25 is used.
-         * \param   _bs         Regression coefficient for calculation of global radiation. If omitted, FAO recommended default value of 0.5 is used.
+         * \param   et0Args     Regression coefficients for Penman/Monteith calculation
+         * \param   [in,out]    result  Result of calculation
          *
-         * \return  An Et0Result structure.
+         * \return  true on success
          */
 
-        public static Et0Result Et0CalcPm(
+        public static bool Et0CalcPm(
             Climate climate,
             DateTime date,
             Location location,
-            Et0PmArgs et0Args
+            Et0PmArgs et0Args,
+            ref Et0Result result
         )
         {
             var climateSet = climate.getValues(date);
 
             //check availability of values
-            if (climateSet == null) return null;
+            if (climateSet == null) return false;
             if (
-                   climateSet.max_temp == null
-                || climateSet.min_temp == null
-                || climateSet.humidity == null
-                || (climateSet.Rs == null && climateSet.sunshine_duration == null)
-            ) return null;
+                   !climateSet.max_temp.HasValue
+                || !climateSet.min_temp.HasValue
+                || !climateSet.humidity.HasValue
+                || (!climateSet.Rs.HasValue && !climateSet.sunshine_duration.HasValue)
+            ) return false;
 
             //initialize default values and replace missing ones
-            if (climateSet.mean_temp == null) climateSet.mean_temp = (climateSet.min_temp + climateSet.max_temp) / 2;
+            if (!climateSet.mean_temp.HasValue) climateSet.mean_temp = (climateSet.min_temp + climateSet.max_temp) / 2;
             //FAO recommended value default of 2m/s
-            if (climateSet.windspeed == null) climateSet.windspeed = 2;
-            if (location.alt == null) location.alt = 0;
+            if (!climateSet.windspeed.HasValue) climateSet.windspeed = 2;
+            //copy altitude from climate, location cannot be null
+            if (!location.alt.HasValue)
+            {
+                if (climate.location.alt.HasValue)
+                {
+                    location.alt = climate.location.alt;
+                }
+                else {
+                    location.alt = 0;
+                }
+            }
 
             var raResult = Ra.RaCalc(date, location);
-            var ra = raResult.ra;
+            result.ra = raResult.ra;
 
-            if (ra == 0)
+            if (result.ra == 0)
             {
-                return new Et0Result(0, 0);
+                result.et0 = 0;
+                return true;
             }
 
             var g = 0;
@@ -221,10 +343,10 @@ namespace atbApi
             var es= (e0Tmin + e0Tmax) / 2;
             var ea= climateSet.humidity / 100 * es;
             var n= 24 / Math.PI * raResult.omegaS;
-            var rs0= (0.75 + 0.00002 * location.alt) * ra;
+            var rs0 = (0.75 + 0.00002 * location.alt) * result.ra;
             var rs= climateSet.Rs;
             if (rs == null) {
-                rs = (et0Args._as + et0Args._bs * climateSet.sunshine_duration / n) * ra;
+                rs = (et0Args._as + et0Args._bs * climateSet.sunshine_duration / n) * result.ra;
                 rs= Math.Min((double)rs, (double)rs0);
             }
             var rsDivRs0= Math.Min((double)rs / (double)rs0, 1);
@@ -235,9 +357,9 @@ namespace atbApi
             var gamma= 0.000665 * p;
             var d= 4098 * (0.6108 * Math.Exp(17.27 * (double)climateSet.mean_temp / ((double)climateSet.mean_temp + 237.3))) / Math.Pow((double)climateSet.mean_temp + 237.2, 2);
             var et0x= (0.408 * d * (rn - g) + gamma * (900 / ((double)climateSet.mean_temp + 273)) * (double)climateSet.windspeed * (es - ea)) / (d + gamma * (1 + 0.34 * (double)climateSet.windspeed));
-            var et0 = Math.Max(0, (double)et0x);
+            result.et0 = Math.Max(0, (double)et0x);
 
-            return new Et0Result(ra, et0);
+            return true;
         }
 
 
@@ -247,39 +369,40 @@ namespace atbApi
          * \param   climate     Use this dataset with climate data.
          * \param   date        Date for ET0 calculation.
          * \param   location    The location for calculation, latitude and altitude are used.
-         * \param   ct          May be null, default: 17.8, Empirical temperature coefficient, if omitted, recommended default value of 17.8 (Hargreaves 1994) is used.
-         * \param   ch          May be null, default: 0.0023, Empirical Hargreaves coefficient, if omitted, recommended default value of 0.0023 (Hargreaves 1994) is used.
-         * \param   eh          May be null, default: 0.5, Empirical hargreaves exponent, if omitted, recommended default value of 0.5 (Hargreaves 1994) is used.
+         * \param   et0Args     Regression coefficients for Hargreaves calculation
+         * \param   [in,out]    result  Result of calculation
          *
-         * \return  An Et0Result structure.
+         * \return  true on success
          */
 
-        public static Et0Result Et0CalcHg(
+        public static bool Et0CalcHg(
             Climate climate,
             DateTime date,
             Location location,
-            Et0HgArgs et0Args
+            Et0HgArgs et0Args,
+            ref Et0Result result
         )
         {
 
             var climateSet= climate.getValues(date);
-            if (climateSet == null) return null;
+            if (climateSet == null) return false;
             if (
-                   climateSet.max_temp == null
-                || climateSet.min_temp == null
-            ) return null;
+                   !climateSet.max_temp.HasValue
+                || !climateSet.min_temp.HasValue
+            ) return false;
 
             var raResult = Ra.RaCalc(date, location);
-            var ra = raResult.ra;
+            result.ra = raResult.ra;
 
-            if (ra == 0) {
-                return new Et0Result(0, 0);
+            if (result.ra == 0) {
+                result.et0 = 0;
+                return true;
             }
 
             var lambda = 2.5 - 0.002361 * ((double)climateSet.max_temp + (double)climateSet.min_temp) / 2;
-            var et0 = et0Args._ch * ra * Math.Pow(((double)climateSet.max_temp - (double)climateSet.min_temp), et0Args._eh) * (((double)climateSet.max_temp + (double)climateSet.min_temp) / 2 + et0Args._ct) / (double)lambda;
+            result.et0 = et0Args._ch * result.ra * Math.Pow(((double)climateSet.max_temp - (double)climateSet.min_temp), et0Args._eh) * (((double)climateSet.max_temp + (double)climateSet.min_temp) / 2 + et0Args._ct) / (double)lambda;
 
-            return new Et0Result(ra, et0);
+            return true;
         }
     }
 }
