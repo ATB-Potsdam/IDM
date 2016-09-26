@@ -96,6 +96,72 @@ namespace atbApi
         }
     }
 
+    /*!
+         * \param   climate             The climate.
+         * \param   plant               The plant.
+         * \param   soil                The soil.
+         * \param   irrigationSchedule  data with irrigation amounts per calculation step.
+         * \param   location            latitude, longitude and altitude.
+         * \param   seedDate            The seed date.
+         * \param   harvestDate         The harvest date.
+         * \param   start
+         * Soil water content at begin of calculation. Six depletion values
+         * for root zone, deep zone and evaporation layer for two
+         * calculation approaches are maintained.
+         * \param   end                 The end Date/Time.
+         * \param   lastConditions      The last conditions.
+         * \param   _as
+         * Regression coefficient for calculation of global radiation. If
+         * omitted, FAO recommended default value of 0.25 is used.
+         * \param   _bs
+         * Regression coefficient for calculation of global radiation. If
+         * omitted, FAO recommended default value of 0.5 is used.
+         * \param   ct
+         * May be null, default: 17.8, Empirical temperature coefficient, if
+         * omitted, recommended default value of 17.8 (Hargreaves 1994) is
+         * used.
+         * \param   ch
+         * May be null, default: 0.0023, Empirical Hargreaves coefficient,
+         * if omitted, recommended default value of 0.0023 (Hargreaves 1994)
+         * is used.
+         * \param   eh
+         * May be null, default: 0.5, Empirical hargreaves exponent, if
+         * omitted, recommended default value of 0.5 (Hargreaves 1994) is
+         * used.
+         * \param   autoIrr             Set to true to automatically irrigate.
+         * \param   _autoIrrLevel
+         * If "autoIrr" is true, it will start at this fraction of available
+         * soil water. The value 0.8 is for 80%.
+         * \param   _autoIrrCutoff
+         * If "autoIrr" is true _and_ "autoIrrAmount" is 0 (automatic amount
+         * calculation), then the amount is calculated to saturate the soil
+         * right up to "autoIrrCutoff" value.
+         * \param   _autoIrrAmount
+         * If "autoIrr" is true, this amount of irrigation is added per day,
+         * if available soil water drops below "autoIrrLevel". If this value
+         * is 0, then the amount of drainage from last day is added if
+         * available soil water drops below "autoIrrLevel".
+         * \param   autoIrrType
+         * If "autoIrr" is true, this type of irrigation system is used for
+         * calculation of interception and fraction wetted.
+         * \param   autoIrrStartDay
+         * If "autoIrr" is used, irrigation is started at this day of plant
+         * development. No automatic irrigation is added before this day.
+         * \param   autoIrrEndDay
+         * If "autoIrr" is used, irrigation ends at this day of plant
+         * development. No automatic irrigation is added after this day.
+         * \param   _eFactor
+         * The calculated value of evaporation is always multiplied by this
+         * factor to reduce evaporation because of e.g. mulching.
+         * \param   _a
+         * Factor for calculation of interception. The LAI (leaf area index)
+         * value o the plant parameters is multiplied by this factor before
+         * interception is calculated.
+         * \param   kcIni
+         * Crop coefficient for initial plant stage. If this argument is
+         * given, the calculation of kcIni is skipped and this value is used
+         * instead.
+    */
     public class ETArgs
     {
         public ETResult result { get; set; }
@@ -296,71 +362,8 @@ namespace atbApi
          * \author  Hunstock
          * \date    29.10.2015
          *
+         * \param [in,out]  args        Arguments.
          * \param [in,out]  result      The result.
-         * \param   climate             The climate.
-         * \param   plant               The plant.
-         * \param   soil                The soil.
-         * \param   irrigationSchedule  data with irrigation amounts per calculation step.
-         * \param   location            latitude, longitude and altitude.
-         * \param   seedDate            The seed date.
-         * \param   harvestDate         The harvest date.
-         * \param   start
-         * Soil water content at begin of calculation. Six depletion values
-         * for root zone, deep zone and evaporation layer for two
-         * calculation approaches are maintained.
-         * \param   end                 The end Date/Time.
-         * \param   lastConditions      The last conditions.
-         * \param   _as
-         * Regression coefficient for calculation of global radiation. If
-         * omitted, FAO recommended default value of 0.25 is used.
-         * \param   _bs
-         * Regression coefficient for calculation of global radiation. If
-         * omitted, FAO recommended default value of 0.5 is used.
-         * \param   ct
-         * May be null, default: 17.8, Empirical temperature coefficient, if
-         * omitted, recommended default value of 17.8 (Hargreaves 1994) is
-         * used.
-         * \param   ch
-         * May be null, default: 0.0023, Empirical Hargreaves coefficient,
-         * if omitted, recommended default value of 0.0023 (Hargreaves 1994)
-         * is used.
-         * \param   eh
-         * May be null, default: 0.5, Empirical hargreaves exponent, if
-         * omitted, recommended default value of 0.5 (Hargreaves 1994) is
-         * used.
-         * \param   autoIrr             Set to true to automatically irrigate.
-         * \param   _autoIrrLevel
-         * If "autoIrr" is true, it will start at this fraction of available
-         * soil water. The value 0.8 is for 80%.
-         * \param   _autoIrrCutoff
-         * If "autoIrr" is true _and_ "autoIrrAmount" is 0 (automatic amount
-         * calculation), then the amount is calculated to saturate the soil
-         * right up to "autoIrrCutoff" value.
-         * \param   _autoIrrAmount
-         * If "autoIrr" is true, this amount of irrigation is added per day,
-         * if available soil water drops below "autoIrrLevel". If this value
-         * is 0, then the amount of drainage from last day is added if
-         * available soil water drops below "autoIrrLevel".
-         * \param   autoIrrType
-         * If "autoIrr" is true, this type of irrigation system is used for
-         * calculation of interception and fraction wetted.
-         * \param   autoIrrStartDay
-         * If "autoIrr" is used, irrigation is started at this day of plant
-         * development. No automatic irrigation is added before this day.
-         * \param   autoIrrEndDay
-         * If "autoIrr" is used, irrigation ends at this day of plant
-         * development. No automatic irrigation is added after this day.
-         * \param   _eFactor
-         * The calculated value of evaporation is always multiplied by this
-         * factor to reduce evaporation because of e.g. mulching.
-         * \param   _a
-         * Factor for calculation of interception. The LAI (leaf area index)
-         * value o the plant parameters is multiplied by this factor before
-         * interception is calculated.
-         * \param   kcIni
-         * Crop coefficient for initial plant stage. If this argument is
-         * given, the calculation of kcIni is skipped and this value is used
-         * instead.
          */
 
         public static bool ETCalc(
@@ -401,6 +404,7 @@ namespace atbApi
             //continued calculation, check, if plant zr changed for the day before
             if (!args.start.Equals(args.seedDate) && plantDayStart > 1) plantDayStart--;
             var plantSetStart = args.plant.getValues(plantDayStart);
+
 
             //no initial conditions, create new, use first day plant zr
             if (args.lastConditions == null)

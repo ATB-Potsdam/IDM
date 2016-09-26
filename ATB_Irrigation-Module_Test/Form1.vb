@@ -86,34 +86,37 @@ Public Class Form1
     End Sub
 
     Private Sub Button4_Click(sender As Object, e As EventArgs) Handles Button4.Click
-        Dim climate As atbApi.data.Climate = New atbApi.data.Climate(atbApi.data.TimeStep.day)
         Dim fs As System.IO.FileStream = New IO.FileStream("C:\IWRM_MIKE-Basin_Irrigation-Module\testdata\climate.public_service.date_2012-04-12T00_00_00.000Z.csv", IO.FileMode.Open)
-        climate.loadFromFileStream(fs)
+        Dim climate As atbApi.data.Climate = New atbApi.data.Climate(fs, atbApi.data.TimeStep.day)
         fs.Close()
         TextBox1.AppendText(climate.name + " start:" + climate.start + " end:" + climate.end + vbNewLine)
     End Sub
 
     Private Async Sub Button5_Click(sender As Object, e As EventArgs) Handles Button5.Click
-        Dim climate As atbApi.data.Climate = New atbApi.data.Climate(atbApi.data.TimeStep.day)
-        Dim count As Integer = Await climate.loadFromATBWebService(New atbApi.Location(12.34, -80.3), New DateTime(2012, 1, 1, 0, 0, 0, DateTimeKind.Utc), New DateTime(2012, 12, 31, 0, 0, 0, DateTimeKind.Utc))
+        Dim climate As atbApi.data.Climate = New atbApi.data.Climate("12.34_-80.3", atbApi.data.TimeStep.day)
+        Dim location As atbApi.Location = New atbApi.Location(12.34, -80.3)
+        Dim count As Integer = Await climate.loadClimateByLocationTagFromATBWebService(location, Nothing, New DateTime(2012, 1, 1, 0, 0, 0, DateTimeKind.Utc), New DateTime(2012, 12, 31, 0, 0, 0, DateTimeKind.Utc))
         TextBox1.AppendText(climate.name + " start:" + climate.start + " end:" + climate.end + vbNewLine)
 
-        Dim climate2 As atbApi.data.Climate = New atbApi.data.Climate(atbApi.data.TimeStep.month)
-        Dim count2 As Integer = Await climate2.loadFromATBWebService(New atbApi.Location(12.34, -80.3), "uea_cru_public", New DateTime(2012, 1, 1, 0, 0, 0, DateTimeKind.Utc), New DateTime(2012, 12, 31, 0, 0, 0, DateTimeKind.Utc))
+        Dim climate2 As atbApi.data.Climate = New atbApi.data.Climate("12.34_-80.3_uea", atbApi.data.TimeStep.month)
+        Dim count2 As Integer = Await climate2.loadClimateByLocationTagFromATBWebService(location, "uea_cru_public", New DateTime(2012, 1, 1, 0, 0, 0, DateTimeKind.Utc), New DateTime(2012, 12, 31, 0, 0, 0, DateTimeKind.Utc))
         TextBox1.AppendText(climate2.name + " start:" + climate2.start + " end:" + climate2.end + vbNewLine)
     End Sub
 
     Private Async Sub Button6_Click(sender As Object, e As EventArgs) Handles Button6.Click
         Dim location As atbApi.Location = New atbApi.Location(48.5, 9.3)
-        Dim climate As atbApi.data.Climate = New atbApi.data.Climate(atbApi.data.TimeStep.day)
-        Dim count As Integer = Await climate.loadFromATBWebService(location, New DateTime(2012, 1, 1, 0, 0, 0, DateTimeKind.Utc), New DateTime(2012, 12, 31, 0, 0, 0, DateTimeKind.Utc))
+        Dim climate As atbApi.data.Climate = New atbApi.data.Climate("48.5_9.3", atbApi.data.TimeStep.day)
+        Dim count As Integer = Await climate.loadClimateByLocationTagFromATBWebService(location, Nothing, New DateTime(2012, 1, 1, 0, 0, 0, DateTimeKind.Utc), New DateTime(2012, 12, 31, 0, 0, 0, DateTimeKind.Utc))
         Dim altitude As Double = Await climate.loadAltitudeFromATBWebService(location)
         location.alt = altitude
         TextBox1.AppendText(climate.name + " start:" + climate.start + " end:" + climate.end + " altitude:" + location.alt.ToString() + vbNewLine)
         Dim testDate As DateTime = New DateTime(2012, 7, 31, 0, 0, 0, DateTimeKind.Utc)
-        Dim et0Hg As atbApi.Et0Result = atbApi.Et0.Et0CalcHg(climate, testDate, location, New atbApi.Et0HgArgs)
-        Dim et0Pm As atbApi.Et0Result = atbApi.Et0.Et0CalcPm(climate, testDate, location, New atbApi.Et0PmArgs)
-        Dim et0 As atbApi.Et0Result = atbApi.Et0.Et0Calc(climate, testDate, location)
+        Dim et0Hg As atbApi.Et0Result = New atbApi.Et0Result
+        atbApi.Et0.Et0CalcHg(climate, testDate, location, New atbApi.Et0HgArgs, et0Hg)
+        Dim et0Pm As atbApi.Et0Result = New atbApi.Et0Result
+        atbApi.Et0.Et0CalcPm(climate, testDate, location, New atbApi.Et0PmArgs, et0Pm)
+        Dim et0 As atbApi.Et0Result = New atbApi.Et0Result
+        atbApi.Et0.Et0Calc(climate, testDate, location, et0)
 
         TextBox1.AppendText("et0Hg:" + et0Hg.et0.ToString() + " et0Pm:" + et0Pm.et0.ToString() + " et0:" + et0.et0.ToString() + " climateEt0:" + climate.getValues(testDate).et0.ToString() + vbNewLine)
     End Sub
@@ -122,39 +125,30 @@ Public Class Form1
 
 
     Private Async Sub Button7_Click(sender As Object, e As EventArgs) Handles Button7.Click
-        'create location to get nearest climate station from webservice
-        Dim location As atbApi.Location = New atbApi.Location(48.5, 9.3)
-        'create climate with daily tmestep
-        Dim climate As atbApi.data.Climate = New atbApi.data.Climate(atbApi.data.TimeStep.day)
+        Dim climate As atbApi.data.Climate = New atbApi.data.Climate("DWD_03987_Potsdam", "53c6b30845900e364c000013", atbApi.data.TimeStep.day)
         'define interval to load climate data
-        Dim climateStart As DateTime = New DateTime(2012, 1, 1, 0, 0, 0, DateTimeKind.Utc)
-        Dim climateEnd As DateTime = New DateTime(2012, 12, 31, 0, 0, 0, DateTimeKind.Utc)
+        Dim climateStart As DateTime = New DateTime(2015, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+        Dim climateEnd As DateTime = New DateTime(2015, 12, 31, 0, 0, 0, DateTimeKind.Utc)
         'load data asyncron from webservice
-        Dim count As Integer = Await climate.loadFromATBWebService(location, climateStart, climateEnd)
-        Dim loopDate As DateTime = climateStart
-        While (loopDate <= climateEnd)
-            Dim values As atbApi.data.ClimateValues = New atbApi.data.ClimateValues()
-            values.max_temp = climate.getValues(loopDate).max_temp
-            values.min_temp = climate.getValues(loopDate).min_temp
-            climate.addValues(loopDate, values)
-            loopDate = loopDate.AddDays(1)
-        End While
+        Dim count As Integer = Await climate.loadClimateByIdFromATBWebService(climateStart, climateEnd)
 
         'load altitude from webservice
-        Dim altitude As Double = Await climate.loadAltitudeFromATBWebService(location)
-        location.alt = altitude
+        'Dim altitude As Double = Await climate.loadAltitudeFromATBWebService(climate.location)
         'create plant from dll internal plant database
-        Dim plant As atbApi.data.Plant = New atbApi.data.Plant(ComboBox1.SelectedItem)
+        Dim plant As atbApi.data.Plant = New atbApi.data.Plant("ATB_barley_oats_wheat_april")
         'create soil from dll internal standard soils
-        Dim soil As atbApi.data.Soil = New atbApi.data.Soil(ComboBox2.SelectedItem)
+        Dim soil As atbApi.data.Soil = New atbApi.data.Soil("USDA-soilclass_sandy_loam")
         'create new soil water conditions if sequential calculation starts
         'it is important, to keep transpirationResult.lastConditions and use this
         'instead for consecutive crops on the same field
         Dim soilConditions As atbApi.data.SoilConditions = New atbApi.data.SoilConditions()
         'define seedDate and harvestDate
-        Dim seedDate As DateTime = New DateTime(2012, 4, 12, 0, 0, 0, DateTimeKind.Utc)
-        Dim harvestDate As DateTime = New DateTime(2012, 10, 5, 0, 0, 0, DateTimeKind.Utc)
+        Dim seedDate As DateTime = New DateTime(2015, 4, 12, 0, 0, 0, DateTimeKind.Utc)
+        Dim harvestDate As DateTime = New DateTime(2015, 10, 5, 0, 0, 0, DateTimeKind.Utc)
         'start calculation
+        Dim etResult As atbApi.ETResult = New atbApi.ETResult
+        Dim etArgs As atbApi.ETArgs = New atbApi.ETArgs
+
         '        Dim transpirationResult As atbApi.TranspirationResult = atbApi.Transpiration.TranspirationCalc(climate, plant, soil, Nothing, location, seedDate, harvestDate, soilConditions, False)
         '       TextBox1.AppendText("et0:" + transpirationResult.et0.ToString() + " runtimeMs:" + transpirationResult.runtimeMs.ToString("F3") + vbNewLine)
         'keep this for next calculation on this field
@@ -163,7 +157,7 @@ Public Class Form1
 
 
     Private Async Sub Button8_Click(sender As Object, e As EventArgs) Handles Button8.Click
-        Dim climateNames = Await atbApi.data.ClimateDb.getClimateNames(False)
+        Dim climateNames = Await atbApi.data.ClimateDb.getClimateNames(False, Nothing)
         For i = 0 To climateNames.Count - 1
             ComboBox3.Items.Add(climateNames(i))
         Next
