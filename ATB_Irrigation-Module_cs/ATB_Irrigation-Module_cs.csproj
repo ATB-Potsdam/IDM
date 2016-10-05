@@ -46,6 +46,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="BaseValues.cs" />
+    <Compile Include="CropSequence.cs" />
     <Compile Include="Evaporation.cs" />
     <Compile Include="IrrigationData.cs" />
     <Compile Include="Et0.cs" />
@@ -67,6 +68,9 @@
     <EmbeddedResource Include="IWRM_ATB-SoilData.csv.gz" />
     <EmbeddedResource Include="IWRM_ALL-PlantData.csv.gz" />
     <None Include="rl3SignKey.snk" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <PropertyGroup>

@@ -81,7 +81,7 @@ namespace atbApi
          *
          */
 
-        public static class ClimateDb
+        public static class ClimateWebServiceDb
         {
             private static IDictionary<String, String> climateIds = new Dictionary<String, String>();
             private static IDictionary<String, Climate> climateInstances = new Dictionary<String, Climate>();
@@ -137,6 +137,54 @@ namespace atbApi
 
                 await _climate.loadClimateByIdFromATBWebService(start, end);
                 return _climate;
+            }
+        }
+
+        public class ClimateDb
+        {
+            private IDictionary<String, Climate> climateData = new Dictionary<String, Climate>();
+
+            /*!
+             * \brief   Constructor to load external csv-File as soil database.
+             *
+             * \param   soilDbFileStream   A file stream to read csv data from.
+             *
+             * \code{.unparsed}
+             * 'create filestream for csv data file
+             * Dim fs As System.IO.FileStream = New IO.FileStream("C:\DHI\MIKE-Basin_SoilData.csv", IO.FileMode.Open)
+             * 'create new soilDb
+             * Dim soilDb As atbApi.data.SoilDb = New atbApi.data.SoilDb(fs)
+             * 'important: close fileStream after SoilDb is created
+             * fs.Close()
+             * 'create new soil and provide your own soilDb to constructor
+             * Dim mySoil As atbApi.data.Soil = New atbApi.data.Soil("soilname_from_csv_data", soilDb)
+             * \endcode
+             */
+
+            public ClimateDb()
+            {
+            }
+
+            internal Climate getClimate(String name)
+            {
+                return climateData[name];
+            }
+
+            public void addClimate(Stream climateFileStream, TimeStep step)
+            {
+                Climate _climate = new Climate(climateFileStream, step);
+                climateData[_climate.name] = _climate;
+            }
+
+            /*!
+             * \brief   Get all soil names.
+             *
+             * \return  All soil names in database as unsorted list.
+             */
+
+            public ICollection<String> getClimateNames()
+            {
+                return climateData.Keys;
             }
         }
 
@@ -263,10 +311,10 @@ namespace atbApi
                         IDictionary<String, String> fields;
                         fields = csvReader.readLine();
 
-                        if (fields == null) continue;
+                        if (fields == null || !fields.ContainsKey("dataObjName")) continue;
                         if (String.IsNullOrEmpty(fields["dataObjName"])) continue;
                         if (String.IsNullOrEmpty(_name)) _name = fields["dataObjName"];
-                        if (String.IsNullOrEmpty(_dataObjId) && !String.IsNullOrEmpty(fields["dataObjId"]))
+                        if (fields.ContainsKey("dataObjId") && String.IsNullOrEmpty(_dataObjId) && !String.IsNullOrEmpty(fields["dataObjId"]))
                         {
                             _dataObjId = fields["dataObjId"];
                         }
@@ -275,10 +323,10 @@ namespace atbApi
 
                         ClimateValues values = new ClimateValues();
                         values.parseData(fields);
+
+                        if (!fields.ContainsKey("_iterator.date")) continue;
                         DateTime _iterator = DateTime.Parse(fields["_iterator.date"], CultureInfo.InvariantCulture);
-                        climateData.Add(Tools.AdjustTimeStep(_iterator, step), values);
-                        _start = _start == null ? _iterator : new DateTime(Math.Min(start.Value.Ticks, _iterator.Ticks));
-                        _end = _end == null ? _iterator : new DateTime(Math.Max(end.Value.Ticks, _iterator.Ticks));
+                        addValues(_iterator, values);
                     }
                     return climateData.Count;
                 }
@@ -360,6 +408,8 @@ namespace atbApi
             public int addValues(DateTime date, ClimateValues values)
             {
                 climateData[Tools.AdjustTimeStep(date, step)] = values;
+                _start = _start == null ? date : new DateTime(Math.Min(start.Value.Ticks, date.Ticks));
+                _end = _end == null ? date : new DateTime(Math.Max(end.Value.Ticks, date.Ticks));
                 return climateData.Count;
             }
 

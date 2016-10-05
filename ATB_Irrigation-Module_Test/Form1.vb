@@ -86,10 +86,18 @@ Public Class Form1
     End Sub
 
     Private Sub Button4_Click(sender As Object, e As EventArgs) Handles Button4.Click
-        Dim fs As System.IO.FileStream = New IO.FileStream("C:\IWRM_MIKE-Basin_Irrigation-Module\testdata\climate.public_service.date_2012-04-12T00_00_00.000Z.csv", IO.FileMode.Open)
+        Dim fs As System.IO.FileStream = New IO.FileStream("C:\IWRM_MIKE-Basin_Irrigation-Module\testdata\climate_Potsdam_53c6b30845900e364c000013.date_1980-01-01T00_00_00.000Z.csv", IO.FileMode.Open)
         Dim climate As atbApi.data.Climate = New atbApi.data.Climate(fs, atbApi.data.TimeStep.day)
         fs.Close()
         TextBox1.AppendText(climate.name + " start:" + climate.start + " end:" + climate.end + vbNewLine)
+
+        For i = 1 To 6
+            Dim fs1 As System.IO.FileStream = New IO.FileStream("C:\IWRM_MIKE-Basin_Irrigation-Module\testdata\climate.uea_cru_public.date-1900-01-01T00-00-00.000Z_clean_" & i & ".csv", IO.FileMode.Open)
+            Dim climate1 As atbApi.data.Climate = New atbApi.data.Climate(fs1, atbApi.data.TimeStep.month)
+            fs1.Close()
+            TextBox1.AppendText(climate1.name + " start:" + climate1.start + " end:" + climate1.end + vbNewLine)
+
+        Next
     End Sub
 
     Private Async Sub Button5_Click(sender As Object, e As EventArgs) Handles Button5.Click
