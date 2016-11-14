@@ -96,6 +96,14 @@ namespace atbApi
         }
     }
 
+    //calculated once at start, put into result as transient values
+    private class TransientValues
+    {
+        public double tawRz { get; set; }
+        public double tawDz { get; set; }
+        public double tawMax { get; set; }
+    }
+
     /*!
          * \param   climate             The climate.
          * \param   plant               The plant.
@@ -276,10 +284,12 @@ namespace atbApi
 
         /*! dailyValues, description: Each line contains values for one day from "seedDate" to "harvestDate". This includes input values, intermediate results, evaporation, transpiration, evapotranspiration and soil water balance. */
         public IDictionary<DateTime, ETDailyValues> dailyValues { get; set; }
+        public TransientValues tValues { get; set; }
 
         public ETResult()
         {
             dailyValues = new Dictionary<DateTime, ETDailyValues>();
+            tValues = new TransientValues();
         }
     }
 
@@ -347,7 +357,7 @@ namespace atbApi
         public double soilStorageEff { get; set; }
     }
 
-    
+
     /*!
      * \brief   The main functions of the irrigation module. Different types of calculation are provided.
      *
@@ -369,77 +379,50 @@ namespace atbApi
         public static bool ETCalc(
             ref ETArgs args,
             ref ETResult result
-            /*CalculationType type,
-            ref ETResult result,
-            Climate climate,
-            Plant plant,
-            Soil soil,
-            Location location,
-            DateTime seedDate,
-            DateTime harvestDate,
-            DateTime start,
-            DateTime end,
-            //from here optional arguments
-            IrrigationSchedule irrigationSchedule = null,
-            SoilConditions lastConditions = null,
-            AutoIrrigationControl autoIrr = null,
-            Et0PmArgs et0PmArgs = new Et0PmArgs(),
-            Et0HgArgs et0HgArgs = new Et0HgArgs(),
-            double eFactor = 1,
-            double a = 0.25,
-            Double? kcIni = null*/
         )
         {
+            //result is not empty, assume this is a continued calculation, just continue loop
+            if (result != null) return ETCalcLoop(ref args, ref result);
+
             var profileStart = DateTime.Now;
+            result = new ETResult();
             result.error = ETTools.CheckArgs(ref args);
             if (result.error != null) return false;
 
             //fill variables
-            var plantDayStart = args.plant.getPlantDay(args.start, args.seedDate, args.harvestDate);
-            if (plantDayStart == null)
+            var plantSetStart = args.plant.getValues(1);
+            if (plantSetStart == null || !plantSetStart.Zr.HasValue)
             {
-                result.error = "TranspirationCalc: cannot calculate plantDayStart for this date: " + args.start + " seedDate: " + args.seedDate + " harvestDate: " + args.harvestDate;
+                result.error = "ETTools: cannot read plant data for day 1, cannot continue!";
                 return false;
             }
-            //continued calculation, check, if plant zr changed for the day before
-            if (!args.start.Equals(args.seedDate) && plantDayStart > 1) plantDayStart--;
-            var plantSetStart = args.plant.getValues(plantDayStart);
 
+            var soilSetZr = args.soil.getValues((double)plantSetStart.Zr);
+            var soilSetMax = args.soil.getValues(args.soil.maxDepth);
+
+            result.tValues.tawRz = 1000 * (soilSetZr.Qfc - soilSetZr.Qwp) * Math.Min((double)plantSetStart.Zr, args.soil.maxDepth);
+            result.tValues.tawMax = 1000 * (soilSetMax.Qfc - soilSetMax.Qwp) * args.soil.maxDepth;
+            //taw in deep zone
+            result.tValues.tawDz = result.tValues.tawMax - result.tValues.tawRz;
 
             //no initial conditions, create new, use first day plant zr
-            if (args.lastConditions == null)
-            {
-                args.lastConditions = new SoilConditions(args.soil, zr: (double)plantSetStart.Zr);
-            }
+            //FIXME: add initial depletion to args
+            if (args.lastConditions == null) args.lastConditions = new SoilConditions(soil: args.soil, zr: (double)plantSetStart.Zr);
 
             //adjust soil water balance for moved root zone
-            var maxDepth = Math.Min(1.999999999999, args.soil.maxDepth);
-            var soilSetMax = args.soil.getValues(maxDepth);
-            var tawMax = 1000 * (soilSetMax.Qfc - soilSetMax.Qwp) * maxDepth;
-            if ((double)plantSetStart.Zr != args.lastConditions.zr)
-            {
-                var soilSetZr = args.soil.getValues((double)plantSetStart.Zr);
-                //taw in root zone
-                var tawRzZr = 1000 * (soilSetZr.Qfc - soilSetZr.Qwp) * (double)plantSetStart.Zr;
-                var tawDzZr = tawMax - tawRzZr;
-                var _lastConditions = args.lastConditions;
-                SoilConditionTools.AdjustSoilConditionsZr(ref _lastConditions, tawRzZr, tawDzZr, (double)plantSetStart.Zr, maxDepth);
-                args.lastConditions = _lastConditions;
-            }
+            args.lastConditions = SoilConditionTools.AdjustSoilConditionsZr(args.lastConditions, result.tValues.tawRz, result.tValues.tawDz, (double)plantSetStart.Zr, args.soil.maxDepth);
+
             result.drDiff = -(args.lastConditions.drRz + args.lastConditions.drDz);
 
-            return ETCalcContinue(ref args, ref result);
+            return ETCalcLoop(ref args, ref result);
         }
 
-        public static bool ETCalcContinue(
+
+        private static bool ETCalcLoop(
             ref ETArgs args,
             ref ETResult result
         )
         {
-            //continue calculation
-            var maxDepth = Math.Min(1.999999999999, args.soil.maxDepth);
-            var soilSetMax = args.soil.getValues(maxDepth);
-            var tawMax = 1000 * (soilSetMax.Qfc - soilSetMax.Qwp) * maxDepth;
             var et0Result = new Et0Result();
 
             for (DateTime loopDate = args.start; loopDate <= args.end; loopDate = loopDate.AddDays(1))
@@ -452,7 +435,7 @@ namespace atbApi
                 if (plantDay == null) continue;
                 var plantSet = args.plant.getValues(plantDay);
                 var stageName = Enum.GetName(plantSet.stage.GetType(), plantSet.stage.Value);
-                var soilSet = args.soil.getValues(Math.Min(args.lastConditions.zr, maxDepth));
+                var soilSet = args.soil.getValues(Math.Min(args.lastConditions.zr, args.soil.maxDepth));
                 if (!Et0.Et0Calc(args.climate, loopDate, args.location, args.et0PmArgs, args.et0HgArgs, ref et0Result)) return false;
                 loopResult.et0 = (double)et0Result.et0;
 
@@ -464,11 +447,11 @@ namespace atbApi
                 loopResult.autoNetIrrigation = 0.0;
 
                 //common calculations for Tc and ETc
-                var zr = Math.Min(maxDepth, (double)plantSet.Zr);
+                var zr = Math.Min(args.soil.maxDepth, (double)plantSet.Zr);
                 //taw in root zone
                 var tawRz = 1000 * (soilSet.Qfc - soilSet.Qwp) * zr;
                 //taw in deep zone
-                var tawDz = tawMax - tawRz;
+                var tawDz = result.tValues.tawMax - tawRz;
                 var ze = soilSet.Ze != null ? soilSet.Ze : 0.1;
                 var tew = 1000 * (soilSet.Qfc - 0.5 * soilSet.Qwp) * ze;
                 var cf = (1 - Math.Exp(-(double)plantSet.LAI * 0.385));

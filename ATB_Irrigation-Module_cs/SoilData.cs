@@ -44,9 +44,9 @@ namespace atbApi
 
             public SoilConditions()
             {
-                drRz = 0.0;
-                drDz = 0.0;
-                de = 0.0;
+                drRz = 0.4;
+                drDz = 0.3;
+                de = 0.4;
                 dpe = 0.0;
                 zr = 0.3;
                 tawRz = null;
@@ -64,7 +64,7 @@ namespace atbApi
                 this.tawDz = tawDz;
             }
 
-            public SoilConditions(Soil soil, double zr = 0.3, double depletionRz = 0.1, double depletionDz = 0.1, double depletionDe = 0.1)
+            public SoilConditions(Soil soil, double zr = 0.3, double depletionRz = 0.4, double depletionDz = 0.3, double depletionDe = 0.4)
             {
                 //hardcoded default values if values are ommitted in constructor
                 var zeInitial = 0.1;
@@ -86,10 +86,13 @@ namespace atbApi
         internal static class SoilConditionTools
         {
             //adjust drainage according to changed root depth
-            internal static void AdjustSoilConditionsZr(ref SoilConditions lastConditions, double tawRz, double tawDz, double zr, double maxDepth)
+            internal static SoilConditions AdjustSoilConditionsZr(SoilConditions lastConditions, double tawRz, double tawDz, double zr, double maxDepth)
             {
                 if (lastConditions.tawRz == null) lastConditions.tawRz = tawRz;
                 if (lastConditions.tawDz == null) lastConditions.tawDz = tawDz;
+
+                if (zr == lastConditions.zr) return lastConditions;
+
                 var drSum = lastConditions.drRz + lastConditions.drDz;
 
                 //catch special case root zone from max to 0
@@ -118,6 +121,8 @@ namespace atbApi
                 }
                 lastConditions.tawRz = tawRz;
                 lastConditions.tawDz = tawDz;
+
+                return lastConditions;
             }
 
             internal static void AdjustSoilConditionsExceeded(ref SoilConditions lastConditions, double tawRz, double tawDz, double zrNew, double maxDepth, ref double e, ref double et)
