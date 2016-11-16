@@ -165,7 +165,7 @@ Public Class Form1
 
 
     Private Async Sub Button8_Click(sender As Object, e As EventArgs) Handles Button8.Click
-        Dim climateNames = Await atbApi.data.ClimateDb.getClimateNames(False, Nothing)
+        Dim climateNames = Await atbApi.data.ClimateWebServiceDb.getClimateNames(False, Nothing)
         For i = 0 To climateNames.Count - 1
             ComboBox3.Items.Add(climateNames(i))
         Next
@@ -179,5 +179,27 @@ Public Class Form1
 
     Private Sub ComboBox3_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ComboBox3.SelectedIndexChanged
 
+    End Sub
+
+    Private Sub Button9_Click(sender As Object, e As EventArgs) Handles Button9.Click
+        'transpiration calc DHI
+        Dim climateDb As atbApi.data.ClimateDb = New atbApi.data.ClimateDb()
+        For i = 1 To 6
+            Dim climateFile = "..\..\..\testdata\climate.uea_cru_public.date-1900-01-01T00-00-00.000Z_clean_" & i & ".csv"
+            Dim climateStream As FileStream = File.OpenRead(climateFile)
+            climateDb.addClimate(climateStream, atbApi.data.TimeStep.month)
+        Next
+
+        Dim cSFile = "..\..\..\testdata\DHI_Field_IWRM_cropSequences.csv"
+        Dim cSStream As FileStream = File.OpenRead(cSFile)
+        Dim cS As atbApi.data.CropSequence = _
+            New atbApi.data.CropSequence(cSStream, atbApi.data.LocalPlantDb.Instance, atbApi.data.LocalSoilDb.Instance, climateDb)
+
+
+        Dim startDate As DateTime = New DateTime(2015, 4, 12, 0, 0, 0, DateTimeKind.Utc)
+        Dim endDate As DateTime = New DateTime(2015, 10, 5, 0, 0, 0, DateTimeKind.Utc)
+        Dim etArgs As New atbApi.ETArgs()
+        Dim result As IDictionary(Of String, atbApi.ETResult)
+        result = cS.runCropSequence(start:=startDate, end:=endDate, step:=atbApi.data.TimeStep.month, etArgs:=etArgs)
     End Sub
 End Class

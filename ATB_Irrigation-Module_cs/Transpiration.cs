@@ -97,7 +97,7 @@ namespace atbApi
     }
 
     //calculated once at start, put into result as transient values
-    private class TransientValues
+    internal class TransientValues
     {
         public double tawRz { get; set; }
         public double tawDz { get; set; }
@@ -284,7 +284,7 @@ namespace atbApi
 
         /*! dailyValues, description: Each line contains values for one day from "seedDate" to "harvestDate". This includes input values, intermediate results, evaporation, transpiration, evapotranspiration and soil water balance. */
         public IDictionary<DateTime, ETDailyValues> dailyValues { get; set; }
-        public TransientValues tValues { get; set; }
+        internal TransientValues tValues { get; set; }
 
         public ETResult()
         {

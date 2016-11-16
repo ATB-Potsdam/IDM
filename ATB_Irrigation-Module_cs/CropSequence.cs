@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Globalization;
 using System.IO;
+using System.Reflection;
 
 using local;
 
@@ -22,7 +23,7 @@ namespace atbApi
     {
 
         /*!
-        * \brief	defines a collection of climate values.
+        * \brief	defines a collection of cropSequence values.
         *
         * \remarks	if "mean_temp" is ommitted, <c>max_temp + min_temp / 2</c> is used.
         */
@@ -53,7 +54,8 @@ namespace atbApi
         public class CropSequence
         {
             /*! vector with data. */
-            private IDictionary<DateTime, IDictionary<String, CropSequenceValues>> cropSequenceData = new Dictionary<DateTime, IDictionary<String, CropSequenceValues>>();
+            //private IDictionary<DateTime, IDictionary<String, CropSequenceValues>> cropSequenceData = new Dictionary<DateTime, IDictionary<String, CropSequenceValues>>();
+            private IList<CropSequenceValues> cropSequenceData = new List<CropSequenceValues>();
             private IDictionary<String, ETResult> _results = new Dictionary<String, ETResult>();
 
             private String _name;
@@ -125,6 +127,9 @@ namespace atbApi
 
             public Exception lastException { get { return this._e; } }
 
+            private IList<String> requiredFields = { "seedDate", "harvestDate", "plant" };
+
+
             /*!
              * \brief   Constructor to create climate and immediate load data from provided fileStream.
              *
@@ -135,12 +140,6 @@ namespace atbApi
             public CropSequence(Stream cropSequenceFileStream, PlantDb plantDb, SoilDb soilDb, ClimateDb climateDb)
             {
                 loadCsv(cropSequenceFileStream);
-            }
-
-            private String createNetworkFieldIndex(CropSequenceValues values)
-            {
-                if (String.IsNullOrEmpty(values.networkId) || String.IsNullOrEmpty(values.fieldId)) return null;
-                return values.networkId + values.fieldId;
             }
 
             private int loadCsv(Stream stream)
@@ -159,9 +158,18 @@ namespace atbApi
 
                         CropSequenceValues values = new CropSequenceValues();
                         values.parseData(fields);
-                        if (!fields.ContainsKey("_iterator.date")) continue;
-                        DateTime _iterator = DateTime.Parse(fields["_iterator.date"], CultureInfo.InvariantCulture);
-                        addValues(_iterator, values);
+                        
+                        bool fieldMissing = false;
+                        foreach (String requiredField in requiredFields) {
+                            if (!fields.ContainsKey(requiredField))
+                            {
+                                fieldMissing = true;
+                                break;
+                            }
+                        }
+                        if (fieldMissing) continue;
+
+                        addValues(values);
                     }
                     return cropSequenceData.Count;
                 }
@@ -180,21 +188,22 @@ namespace atbApi
              * \result  number of datasets
              */
 
-            public int addValues(DateTime date, CropSequenceValues values)
+            public int addValues(CropSequenceValues values)
             {
-                DateTime _dateTimeIndex = Tools.AdjustTimeStep(date, TimeStep.day);
-                if (!cropSequenceData.ContainsKey(_dateTimeIndex))
-                {
-                    cropSequenceData[_dateTimeIndex] = new Dictionary<String, CropSequenceValues>();
+                //use this for .net 4.0
+                //foreach (PropertyInfo pi in values.GetType().GetRuntimeProperties()) {
+                //use this for .net 4.5
+                IList<String> piNames = new List<String>();
+                foreach (PropertyInfo pi in values.GetType().GetRuntimeProperties()) {
+                    piNames.Add(pi.Name);
                 }
 
-                String networkFieldIndex = createNetworkFieldIndex(values);
-                if (String.IsNullOrEmpty(networkFieldIndex)) return cropSequenceData.Count;
+                foreach (String requiredField in requiredFields) {
+                    if (piNames.Contains(requiredField)) continue;
+                    return -1;
+                }
 
-                cropSequenceData[_dateTimeIndex][networkFieldIndex] = values;
-
-                _start = _start == null ? date : new DateTime(Math.Min(start.Value.Ticks, date.Ticks));
-                _end = _end == null ? date : new DateTime(Math.Max(end.Value.Ticks, date.Ticks));
+                cropSequenceData.Add(values);
 
                 return cropSequenceData.Count;
             }
@@ -208,19 +217,21 @@ namespace atbApi
              * \return  The values if available for requested date, else null is returned.
              */
 
-            public IDictionary<String, CropSequenceValues> getCropSequence(DateTime date)
+            public IList<CropSequenceValues> getCropSequence(DateTime date)
             {
                 if (cropSequenceData == null) return null;
 
-                IDictionary<String, CropSequenceValues> resultSequence;
-                cropSequenceData.TryGetValue(Tools.AdjustTimeStep(date, TimeStep.day), out resultSequence);
+                IList<CropSequenceValues> resultSequence = new List<CropSequenceValues>();
+                foreach (CropSequenceValues values in cropSequenceData) {
+                    if (values.seedDate <= date && values.harvestDate >= date) resultSequence.Add(values);
+                }
                 return resultSequence;
             }
 
             public IDictionary<String, ETResult> runCropSequence(DateTime start, DateTime end, TimeStep step, ref ETArgs etArgs)
             {
-                foreach (String networkFieldIndex in getCropSequence(start).Keys) {
-                    results[networkFieldIndex] = new ETResult();
+                foreach (CropSequenceValues cs in getCropSequence(start)) {
+
                 }
                 return results;
             }

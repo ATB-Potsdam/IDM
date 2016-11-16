@@ -34,6 +34,7 @@ Partial Class Form1
         Me.Button6 = New System.Windows.Forms.Button()
         Me.Button7 = New System.Windows.Forms.Button()
         Me.Button8 = New System.Windows.Forms.Button()
+        Me.Button9 = New System.Windows.Forms.Button()
         Me.SuspendLayout()
         '
         'Button1
@@ -64,7 +65,7 @@ Partial Class Form1
         '
         'Button2
         '
-        Me.Button2.Location = New System.Drawing.Point(474, 11)
+        Me.Button2.Location = New System.Drawing.Point(471, 11)
         Me.Button2.Name = "Button2"
         Me.Button2.Size = New System.Drawing.Size(131, 23)
         Me.Button2.TabIndex = 3
@@ -107,7 +108,7 @@ Partial Class Form1
         '
         'Button5
         '
-        Me.Button5.Location = New System.Drawing.Point(474, 112)
+        Me.Button5.Location = New System.Drawing.Point(471, 108)
         Me.Button5.Name = "Button5"
         Me.Button5.Size = New System.Drawing.Size(131, 23)
         Me.Button5.TabIndex = 8
@@ -116,7 +117,7 @@ Partial Class Form1
         '
         'Button6
         '
-        Me.Button6.Location = New System.Drawing.Point(611, 112)
+        Me.Button6.Location = New System.Drawing.Point(608, 108)
         Me.Button6.Name = "Button6"
         Me.Button6.Size = New System.Drawing.Size(131, 23)
         Me.Button6.TabIndex = 9
@@ -134,18 +135,28 @@ Partial Class Form1
         '
         'Button8
         '
-        Me.Button8.Location = New System.Drawing.Point(611, 11)
+        Me.Button8.Location = New System.Drawing.Point(608, 11)
         Me.Button8.Name = "Button8"
         Me.Button8.Size = New System.Drawing.Size(131, 23)
         Me.Button8.TabIndex = 11
         Me.Button8.Text = "ClimateDb from http"
         Me.Button8.UseVisualStyleBackColor = True
         '
+        'Button9
+        '
+        Me.Button9.Location = New System.Drawing.Point(471, 158)
+        Me.Button9.Name = "Button9"
+        Me.Button9.Size = New System.Drawing.Size(131, 23)
+        Me.Button9.TabIndex = 12
+        Me.Button9.Text = "transpiration calc DHI"
+        Me.Button9.UseVisualStyleBackColor = True
+        '
         'Form1
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(834, 470)
+        Me.Controls.Add(Me.Button9)
         Me.Controls.Add(Me.Button8)
         Me.Controls.Add(Me.Button7)
         Me.Controls.Add(Me.Button6)
@@ -176,5 +187,6 @@ End Sub
     Friend WithEvents Button6 As System.Windows.Forms.Button
     Friend WithEvents Button7 As System.Windows.Forms.Button
     Friend WithEvents Button8 As System.Windows.Forms.Button
+    Friend WithEvents Button9 As System.Windows.Forms.Button
 
 End Class

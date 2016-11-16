@@ -125,9 +125,9 @@ namespace atbApi
                 return lastConditions;
             }
 
-            internal static void AdjustSoilConditionsExceeded(ref SoilConditions lastConditions, double tawRz, double tawDz, double zrNew, double maxDepth, ref double e, ref double et)
+            internal static SoilConditions AdjustSoilConditionsExceeded(SoilConditions lastConditions, double tawRz, double tawDz, double zrNew, double maxDepth, ref double e, ref double et)
             {
-                if (zrNew != lastConditions.zr) AdjustSoilConditionsZr(ref lastConditions, tawRz, tawDz, zrNew, maxDepth);
+                if (zrNew != lastConditions.zr) lastConditions = AdjustSoilConditionsZr(lastConditions, tawRz, tawDz, zrNew, maxDepth);
 
                 var balanceSum = e + et;
                 //calculate soil water balance
@@ -162,6 +162,8 @@ namespace atbApi
                     //drainage exceeds taw should not happen in deep zone -> write exceed value to result table
                     drDz= tawDz;
                 }
+
+                return lastConditions;
             }
 
         }
