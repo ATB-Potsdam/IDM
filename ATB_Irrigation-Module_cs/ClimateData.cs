@@ -311,9 +311,9 @@ namespace atbApi
                         IDictionary<String, String> fields;
                         fields = csvReader.readLine();
 
-                        if (fields == null || !fields.ContainsKey("dataObjName")) continue;
-                        if (String.IsNullOrEmpty(fields["dataObjName"])) continue;
+                        if (fields == null || !fields.ContainsKey("dataObjName") || String.IsNullOrEmpty(fields["dataObjName"])) continue;
                         if (String.IsNullOrEmpty(_name)) _name = fields["dataObjName"];
+
                         if (fields.ContainsKey("dataObjId") && String.IsNullOrEmpty(_dataObjId) && !String.IsNullOrEmpty(fields["dataObjId"]))
                         {
                             _dataObjId = fields["dataObjId"];

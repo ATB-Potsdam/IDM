@@ -137,8 +137,8 @@ namespace atbApi
                     IDictionary<String, String> fields;
                     fields = csvReader.readLine();
 
+                    if (fields == null || !fields.ContainsKey("dataObjName") || String.IsNullOrEmpty(fields["dataObjName"])) continue;
                     String name = fields["dataObjName"];
-                    if (String.IsNullOrEmpty(fields["dataObjName"])) continue;
 
                     if (!plantData.ContainsKey(name))
                     {

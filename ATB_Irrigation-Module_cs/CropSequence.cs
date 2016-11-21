@@ -127,7 +127,7 @@ namespace atbApi
 
             public Exception lastException { get { return this._e; } }
 
-            private IList<String> requiredFields = { "seedDate", "harvestDate", "plant" };
+            private IList<String> requiredFields = new List<String>(){ "seedDate", "harvestDate", "plant" };
 
 
             /*!
@@ -139,6 +139,9 @@ namespace atbApi
 
             public CropSequence(Stream cropSequenceFileStream, PlantDb plantDb, SoilDb soilDb, ClimateDb climateDb)
             {
+                _plantDb = plantDb;
+                _climateDb = climateDb;
+                _soilDb = soilDb;
                 loadCsv(cropSequenceFileStream);
             }
 
@@ -154,7 +157,13 @@ namespace atbApi
                         IDictionary<String, String> fields;
                         fields = csvReader.readLine();
 
-                        if (fields == null) continue;
+                        if (fields == null || !fields.ContainsKey("dataObjName") || String.IsNullOrEmpty(fields["dataObjName"])) continue;
+                        if (String.IsNullOrEmpty(_name)) _name = fields["dataObjName"];
+
+                        if (fields.ContainsKey("dataObjId") && String.IsNullOrEmpty(_dataObjId) && !String.IsNullOrEmpty(fields["dataObjId"]))
+                        {
+                            _dataObjId = fields["dataObjId"];
+                        }
 
                         CropSequenceValues values = new CropSequenceValues();
                         values.parseData(fields);
@@ -190,10 +199,10 @@ namespace atbApi
 
             public int addValues(CropSequenceValues values)
             {
+                IList<String> piNames = new List<String>();
                 //use this for .net 4.0
                 //foreach (PropertyInfo pi in values.GetType().GetRuntimeProperties()) {
                 //use this for .net 4.5
-                IList<String> piNames = new List<String>();
                 foreach (PropertyInfo pi in values.GetType().GetRuntimeProperties()) {
                     piNames.Add(pi.Name);
                 }
@@ -203,6 +212,7 @@ namespace atbApi
                     return -1;
                 }
 
+                //FIXME: set _start and _end
                 cropSequenceData.Add(values);
 
                 return cropSequenceData.Count;
