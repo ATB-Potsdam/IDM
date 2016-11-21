@@ -31,7 +31,7 @@ namespace atbApi
             /*! readonly property: name of the irrigation method */
             public String name { get { return this._name; } }
 
-            /*!
+             /*!
              * \brief   Constructor for new struct, all values must be provided.
              *
              * \param   fw              The fraction of wetted surface.
@@ -39,7 +39,7 @@ namespace atbApi
              * \param   name            The name of the irrigation method.
              */
 
-            public IrrigationType(double fw, double interception, String name)
+            public IrrigationType(double fw = 1, double interception = 1, String name = "sprinkler")
             {
                 this._fw = fw;
                 this._interception = interception;

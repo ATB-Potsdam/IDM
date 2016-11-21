@@ -30,18 +30,20 @@ namespace atbApi
 
         public class CropSequenceValues : BaseValues
         {
-            public String networkId;
-            public String fieldId;
-            public DateTime seedDate;
-            public DateTime harvestDate;
-            public Plant plant;
-            public Soil soil;
-            public Climate climate;
-            public IrrigationType irrigationType;
+            public String networkId { get; set; }
+            public String fieldId { get; set; }
+            public DateTime seedDate { get; set; }
+            public DateTime harvestDate { get; set; }
+            public Plant plant { get; set; }
+            public Soil soil { get; set; }
+            public Climate climate { get; set; }
+            public IrrigationType irrigationType { get; set; }
 
-            public new void parseData(IDictionary<String, String> values)
+            private static IDictionary<String, String> propertyMapper = new Dictionary<String, String>();
+
+            public new void parseData(IDictionary<String, String> values, PlantDb pdb = null, SoilDb sdb = null, ClimateDb cdb = null)
             {
-                base.parseData(values);
+                base.parseData(values, propertyMapper, pdb: pdb, sdb: sdb, cdb: cdb);
             }
         }
 
@@ -166,7 +168,16 @@ namespace atbApi
                         }
 
                         CropSequenceValues values = new CropSequenceValues();
-                        values.parseData(fields);
+                        //catch parse exception and continue reading file
+                        try
+                        {
+                            values.parseData(fields, pdb: plantDb, sdb: soilDb, cdb: climateDb);
+                        }
+                        catch (Exception e)
+                        {
+                            _e = e;
+                            continue;
+                        }
                         
                         bool fieldMissing = false;
                         foreach (String requiredField in requiredFields) {
@@ -213,6 +224,9 @@ namespace atbApi
                 }
 
                 //FIXME: set _start and _end
+                if (!_start.HasValue || values.seedDate < _start) _start = values.seedDate;
+                if (!_end.HasValue || values.harvestDate > _end) _end = values.harvestDate;
+
                 cropSequenceData.Add(values);
 
                 return cropSequenceData.Count;
@@ -240,8 +254,10 @@ namespace atbApi
 
             public IDictionary<String, ETResult> runCropSequence(DateTime start, DateTime end, TimeStep step, ref ETArgs etArgs)
             {
+                //FIXME: add StopWatch
                 foreach (CropSequenceValues cs in getCropSequence(start)) {
-
+                    String csIndex = cs.networkId + cs.fieldId;
+                    if (!results.ContainsKey(csIndex)) results[csIndex] = new ETResult();
                 }
                 return results;
             }

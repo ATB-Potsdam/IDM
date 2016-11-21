@@ -211,6 +211,7 @@ namespace atbApi
         {
             private const double DepthOffset = 0.000000000001;
             private Stream soilDbFileStream;
+            private IDictionary<String, Soil> soils = new Dictionary<String, Soil>();
             private ICollection<String> names = new HashSet<String>();
             private IDictionary<String, double> maxDepth = new Dictionary<String, double>();
             private IDictionary<String, IDictionary<Double, SoilValues>> soilData = new Dictionary<String, IDictionary<Double, SoilValues>>();
@@ -284,6 +285,17 @@ namespace atbApi
             public ICollection<String> getSoilNames()
             {
                 return soilData.Keys;
+            }
+        
+            public Soil getSoil(String name)
+            {
+                //soil not in DB
+                if (!soilData.ContainsKey(name)) return null;
+                //soil instance already created
+                if (soils.ContainsKey(name)) return soils[name];
+                //create new instance
+                soils[name] = new Soil(name, this);
+                return soils[name];
             }
         }
 

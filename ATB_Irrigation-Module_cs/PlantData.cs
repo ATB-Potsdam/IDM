@@ -104,6 +104,7 @@ namespace atbApi
         public class PlantDb
         {
             private Stream plantDbFileStream;
+            private IDictionary<String, Plant> plants = new Dictionary<String, Plant>();
             private ICollection<String> names = new HashSet<String>();
             private IDictionary<String, IDictionary<int, PlantValues>> plantData = new Dictionary<String, IDictionary<int, PlantValues>>();
             private IDictionary<String, int> plantStagesLength = new Dictionary<String, int>();
@@ -185,7 +186,8 @@ namespace atbApi
 
             internal IDictionary<int, PlantValues> getPlantData(String name)
             {
-                return plantData[name];
+                if (plantData.ContainsKey(name)) return plantData[name];
+                return null;
             }
 
             /*!
@@ -197,6 +199,17 @@ namespace atbApi
             public ICollection<String> getPlantNames()
             {
                 return plantData.Keys;
+            }
+
+            public Plant getPlant(String name)
+            {
+                //plant not in DB
+                if (!plantData.ContainsKey(name)) return null;
+                //plant instance already created
+                if (plants.ContainsKey(name)) return plants[name];
+                //create new instance
+                plants[name] = new Plant(name, this);
+                return plants[name];
             }
         }
 

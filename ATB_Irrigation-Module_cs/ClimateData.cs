@@ -142,7 +142,7 @@ namespace atbApi
 
         public class ClimateDb
         {
-            private IDictionary<String, Climate> climateData = new Dictionary<String, Climate>();
+            private IDictionary<String, Climate> climates = new Dictionary<String, Climate>();
 
             /*!
              * \brief   Constructor to load external csv-File as soil database.
@@ -167,13 +167,13 @@ namespace atbApi
 
             internal Climate getClimate(String name)
             {
-                return climateData[name];
+                return climates.ContainsKey(name) ? climates[name] : null;
             }
 
             public void addClimate(Stream climateFileStream, TimeStep step)
             {
                 Climate _climate = new Climate(climateFileStream, step);
-                climateData[_climate.name] = _climate;
+                climates[_climate.name] = _climate;
             }
 
             /*!
@@ -184,7 +184,7 @@ namespace atbApi
 
             public ICollection<String> getClimateNames()
             {
-                return climateData.Keys;
+                return climates.Keys;
             }
         }
 
