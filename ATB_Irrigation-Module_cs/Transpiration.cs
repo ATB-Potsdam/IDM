@@ -39,6 +39,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Diagnostics;
+using System.Reflection;
 
 using atbApi;
 using atbApi.data;
@@ -202,6 +203,18 @@ namespace atbApi
             et0HgArgs = new Et0HgArgs();
             eFactor = 1;
             a = 0.25;
+        }
+
+        //clone constructor
+        public ETArgs(ETArgs etArgs)
+        {
+            //use this for .net 4.0
+            //foreach (PropertyInfo pi in this.GetType().GetProperties())
+            //use this for .net 4.5
+            foreach (PropertyInfo pi in this.GetType().GetRuntimeProperties())
+            {
+                pi.SetValue(this, etArgs.GetType().GetRuntimeProperty(pi.Name).GetValue(etArgs, null), null);
+            }
         }
     }
 
@@ -456,7 +469,7 @@ namespace atbApi
                 var tew = 1000 * (soilSet.Qfc - 0.5 * soilSet.Qwp) * ze;
                 var cf = (1 - Math.Exp(-(double)plantSet.LAI * 0.385));
 
-                if (args.irrigationSchedule.schedule.ContainsKey(loopDate))
+                if (args.irrigationSchedule != null && args.irrigationSchedule.schedule != null && args.irrigationSchedule.schedule.ContainsKey(loopDate))
                 {
                     double _irrigation;
                     args.irrigationSchedule.schedule.TryGetValue(loopDate, out _irrigation);
@@ -503,8 +516,8 @@ namespace atbApi
                 }
                 loopResult.interceptionIrr = args.a * (double)plantSet.LAI * (1 - 1 / (1 + (cf * loopResult.netIrrigation) / (args.a * (double)plantSet.LAI)));
                 loopResult.interceptionAutoIrr = args.a * (double)plantSet.LAI * (1 - 1 / (1 + (cf * loopResult.autoNetIrrigation) / (args.a * (double)plantSet.LAI)));
-                loopResult.interceptionIrr = loopResult.interceptionIrr * args.irrigationSchedule.type.interception;
-                loopResult.interceptionAutoIrr = loopResult.interceptionAutoIrr * args.autoIrr.type.interception;
+                loopResult.interceptionIrr = args.irrigationSchedule != null && args.irrigationSchedule.type != null ? loopResult.interceptionIrr * args.irrigationSchedule.type.interception : 0.0;
+                loopResult.interceptionAutoIrr = args.autoIrr != null && args.autoIrr.type != null ? loopResult.interceptionAutoIrr * args.autoIrr.type.interception : 0.0;
 
                 //calculate netPrecipitation for Etc/Tc
                 loopResult.netPrecipitation =
@@ -524,6 +537,7 @@ namespace atbApi
                 loopResult.tawRz = tawRz;
                 loopResult.tawDz = tawDz;
 
+                /*
                 var eConditions = args.lastConditions;
                 var eResult = Evaporation.ECalculation(
                     ref eConditions,
@@ -547,7 +561,6 @@ namespace atbApi
                 loopResult.eAct = eResult.e;
                 loopResult.de = eResult.de;
                 loopResult.dpe = eResult.dpe;
-                /*
                 loopResult.few = eResult.few;
                 loopResult.tew = eResult.tew;
                 loopResult.rew = eResult.rew;

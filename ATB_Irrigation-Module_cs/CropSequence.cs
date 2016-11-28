@@ -252,13 +252,43 @@ namespace atbApi
                 return resultSequence;
             }
 
+            private static ETArgs MergeArgs(ref ETArgs etArgs, CropSequenceValues cs)
+            {
+                ETArgs result = new ETArgs(etArgs);
+                result.climate = cs.climate;
+                result.plant = cs.plant;
+                result.soil = cs.soil;
+                result.seedDate = cs.seedDate;
+                result.harvestDate = cs.harvestDate;
+                return result;
+            }
+
             public IDictionary<String, ETResult> runCropSequence(DateTime start, DateTime end, TimeStep step, ref ETArgs etArgs)
             {
-                //FIXME: add StopWatch
-                foreach (CropSequenceValues cs in getCropSequence(start)) {
+                Stopwatch stopWatch = new Stopwatch();
+                stopWatch.Start();
+                foreach (CropSequenceValues cs in getCropSequence(start))
+                {
                     String csIndex = cs.networkId + cs.fieldId;
-                    if (!results.ContainsKey(csIndex)) results[csIndex] = new ETResult();
+                    ETResult tmpResult = null;
+                    ETArgs tmpArgs = MergeArgs(ref etArgs, cs);
+                    tmpArgs.start = start;
+                    tmpArgs.end = end;
+                    if (_results.ContainsKey(csIndex))
+                    {
+                        tmpResult = _results[csIndex];
+                    }
+                    Transpiration.ETCalc(ref tmpArgs, ref tmpResult);
+                    _results[csIndex] = tmpResult;
                 }
+                stopWatch.Stop();
+                TimeSpan ts = stopWatch.Elapsed;
+
+                // Format and display the TimeSpan value.
+                string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:000}",
+                    ts.Hours, ts.Minutes, ts.Seconds,
+                    ts.Milliseconds);
+                Debug.WriteLine("runCropSequence took " + elapsedTime); 
                 return results;
             }
         }

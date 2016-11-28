@@ -190,16 +190,16 @@ Public Class Form1
             climateDb.addClimate(climateStream, atbApi.data.TimeStep.month)
         Next
 
-        Dim cSFile = "..\..\..\testdata\DHI_Field_IWRM_cropSequences.csv"
+        Dim cSFile = "..\..\..\testdata\DHI_Field_IWRM_cropSequences_test.csv"
         Dim cSStream As FileStream = File.OpenRead(cSFile)
         Dim cS As atbApi.data.CropSequence = _
             New atbApi.data.CropSequence(cSStream, atbApi.data.LocalPlantDb.Instance, atbApi.data.LocalSoilDb.Instance, climateDb)
 
 
-        Dim startDate As DateTime = New DateTime(2015, 4, 12, 0, 0, 0, DateTimeKind.Utc)
-        Dim endDate As DateTime = New DateTime(2015, 10, 5, 0, 0, 0, DateTimeKind.Utc)
+        Dim startDate As DateTime = New DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+        Dim endDate As DateTime = New DateTime(2001, 12, 31, 0, 0, 0, DateTimeKind.Utc)
         Dim etArgs As New atbApi.ETArgs()
         Dim result As IDictionary(Of String, atbApi.ETResult)
-        result = cS.runCropSequence(start:=startDate, end:=endDate, step:=atbApi.data.TimeStep.month, etArgs:=etArgs)
+        result = cS.runCropSequence(start:=startDate, end:=endDate, step:=atbApi.data.TimeStep.day, etArgs:=etArgs)
     End Sub
 End Class
