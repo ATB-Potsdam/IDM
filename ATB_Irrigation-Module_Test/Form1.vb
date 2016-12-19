@@ -183,11 +183,12 @@ Public Class Form1
 
     Private Sub Button9_Click(sender As Object, e As EventArgs) Handles Button9.Click
         'transpiration calc DHI
+        Dim cultureInfo As CultureInfo = New CultureInfo("de-DE")
         Dim climateDb As atbApi.data.ClimateDb = New atbApi.data.ClimateDb()
         For i = 1 To 6
             Dim climateFile = "..\..\..\testdata\climate.uea_cru_public.date-1900-01-01T00-00-00.000Z_clean_" & i & ".csv"
             Dim climateStream As FileStream = File.OpenRead(climateFile)
-            climateDb.addClimate(climateStream, atbApi.data.TimeStep.month)
+            climateDb.addClimate(climateStream, atbApi.data.TimeStep.month, cultureInfo)
         Next
 
         Dim cSFile = "..\..\..\testdata\DHI_Field_IWRM_cropSequences_test.csv"
@@ -196,7 +197,7 @@ Public Class Form1
             New atbApi.data.CropSequence(cSStream, atbApi.data.LocalPlantDb.Instance, atbApi.data.LocalSoilDb.Instance, climateDb)
 
 
-        Dim startDate As DateTime = New DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+        Dim startDate As DateTime = New DateTime(2001, 1, 1, 0, 0, 0, DateTimeKind.Utc)
         Dim endDate As DateTime = New DateTime(2001, 12, 31, 0, 0, 0, DateTimeKind.Utc)
         Dim etArgs As New atbApi.ETArgs()
         Dim result As IDictionary(Of String, atbApi.ETResult)

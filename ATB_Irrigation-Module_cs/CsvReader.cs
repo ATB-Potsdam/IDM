@@ -93,6 +93,7 @@ namespace local
                     continue;
                 }
                 inString = stringStart && !stringEnd;
+                //if (!result.Contains(f)) result.Add(f);
                 result.Add(f);
             }
 

@@ -420,7 +420,7 @@ namespace atbApi
 
             //no initial conditions, create new, use first day plant zr
             //FIXME: add initial depletion to args
-            if (args.lastConditions == null) args.lastConditions = new SoilConditions(soil: args.soil, zr: (double)plantSetStart.Zr);
+            if (args.lastConditions == null) args.lastConditions = new SoilConditions(soil: args.soil, zr: (double)plantSetStart.Zr, depletionRz: 0.1, depletionDz: 0.1, depletionDe: 0.1);
 
             //adjust soil water balance for moved root zone
             args.lastConditions = SoilConditionTools.AdjustSoilConditionsZr(args.lastConditions, result.tValues.tawRz, result.tValues.tawDz, (double)plantSetStart.Zr, args.soil.maxDepth);

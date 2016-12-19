@@ -66,9 +66,17 @@ namespace atbApi
             /*! vapour pressure [hPa] optional value. */
             public Double? vapour_pressure { get; set; }
 
-            public new void parseData(IDictionary<String, String> values)
+            private static IDictionary<String, String> propertyMapper = new Dictionary<String, String>();
+
+            static ClimateValues()
             {
-                base.parseData(values);
+                // renamed property in Sponge-JS export tool
+                // propertyMapper.Add("xxx", "name");
+            }
+
+            public new void parseData(IDictionary<String, String> values, CultureInfo cultureInfo = null)
+            {
+                base.parseData(values, propertyMapper, cultureInfo: cultureInfo);
             }
         }
 
@@ -170,9 +178,9 @@ namespace atbApi
                 return climates.ContainsKey(name) ? climates[name] : null;
             }
 
-            public void addClimate(Stream climateFileStream, TimeStep step)
+            public void addClimate(Stream climateFileStream, TimeStep step, CultureInfo cultureInfo = null)
             {
-                Climate _climate = new Climate(climateFileStream, step);
+                Climate _climate = new Climate(climateFileStream, step, cultureInfo);
                 climates[_climate.name] = _climate;
             }
 
@@ -206,6 +214,7 @@ namespace atbApi
             private TimeStep _step;
             private DateTime? _start;
             private DateTime? _end;
+            private CultureInfo _cultureInfo = null;
 
             /*!
              * \brief   public readonly property to access the name
@@ -265,9 +274,10 @@ namespace atbApi
              * \param   step                incremental time step of the data
              */
 
-            public Climate(Stream climateFileStream, TimeStep step)
+            public Climate(Stream climateFileStream, TimeStep step, CultureInfo cultureInfo = null)
             {
                 _step = step;
+                _cultureInfo = cultureInfo;
                 loadCsv(climateFileStream);
             }
 
@@ -278,10 +288,11 @@ namespace atbApi
              * \param   step    incremental time step of the data
              */
 
-            public Climate(String name, TimeStep step)
+            public Climate(String name, TimeStep step, CultureInfo cultureInfo = null)
             {
                 _step = step;
                 _name = name;
+                _cultureInfo = cultureInfo;
             }
 
             /*!
@@ -292,11 +303,12 @@ namespace atbApi
              * \param   step        incremental time step of the data
              */
 
-            public Climate(String name, String dataObjId, TimeStep step)
+            public Climate(String name, String dataObjId, TimeStep step, CultureInfo cultureInfo = null)
             {
                 _step = step;
                 _name = name;
                 _dataObjId = dataObjId;
+                _cultureInfo = cultureInfo;
             }
 
             private int loadCsv(Stream stream)
@@ -322,10 +334,10 @@ namespace atbApi
                         //if (!_name.Equals(fields["dataObjName"])) continue;
 
                         ClimateValues values = new ClimateValues();
-                        values.parseData(fields);
+                        values.parseData(fields, _cultureInfo == null ? CultureInfo.InvariantCulture : _cultureInfo);
 
                         if (!fields.ContainsKey("_iterator.date")) continue;
-                        DateTime _iterator = DateTime.Parse(fields["_iterator.date"], CultureInfo.InvariantCulture);
+                        DateTime _iterator = DateTime.Parse(fields["_iterator.date"], _cultureInfo == null ? CultureInfo.InvariantCulture : _cultureInfo);
                         addValues(_iterator, values);
                     }
                     return climateData.Count;

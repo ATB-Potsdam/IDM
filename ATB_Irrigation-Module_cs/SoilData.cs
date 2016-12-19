@@ -194,6 +194,7 @@ namespace atbApi
 
             public new void parseData(IDictionary<String, String> values)
             {
+                this.Ze = 0.1;
                 base.parseData(values, propertyMapper);
             }
         }
@@ -273,7 +274,8 @@ namespace atbApi
 
             internal double getMaxDepth(String name)
             {
-                return maxDepth[name] - DepthOffset;
+                //return maxDepth[name] - DepthOffset;
+                return maxDepth[name];
             }
 
             /*!
@@ -433,7 +435,7 @@ namespace atbApi
 
                 SoilValues resultSet;
                 Double _z = Math.Round(z, 2);
-                bool hasSet = soilData.TryGetValue(z, out resultSet);
+                bool hasSet = soilData.TryGetValue(_z, out resultSet);
                 if (hasSet) return resultSet;
                 //try to get default set for average soils with only default set
                 soilData.TryGetValue(0, out resultSet);

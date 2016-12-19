@@ -86,9 +86,9 @@ namespace atbApi
                 // propertyMapper.Add("stage", "name");
             }
 
-            public new void parseData(IDictionary<String, String> values)
+            public new void parseData(IDictionary<String, String> values, CultureInfo cultureInfo = null)
             {
-                base.parseData(values, propertyMapper);
+                base.parseData(values, propertyMapper, cultureInfo: cultureInfo);
             }
         };
 
@@ -128,7 +128,7 @@ namespace atbApi
              * \endcode
              */
 
-            public PlantDb(Stream plantDbFileStream)
+            public PlantDb(Stream plantDbFileStream, CultureInfo cultureInfo = null)
             {
                 this.plantDbFileStream = plantDbFileStream;
                 CsvReader csvReader = new CsvReader(plantDbFileStream);
@@ -149,8 +149,8 @@ namespace atbApi
                     }
                     IDictionary<int, PlantValues> plantValues = plantData[name];
                     PlantValues values = new PlantValues();
-                    values.parseData(fields);
-                    int _iterator = Int32.Parse(fields["_iterator.day"], CultureInfo.InvariantCulture);
+                    values.parseData(fields, cultureInfo != null ? cultureInfo : CultureInfo.InvariantCulture);
+                    int _iterator = Int32.Parse(fields["_iterator.day"], cultureInfo != null ? cultureInfo : CultureInfo.InvariantCulture);
                     plantValues.Add(_iterator, values);
                     plantStagesLength[name] = Math.Max(plantStagesLength[name], _iterator);
                     if (values.stage.Equals(PlantStage.initial))

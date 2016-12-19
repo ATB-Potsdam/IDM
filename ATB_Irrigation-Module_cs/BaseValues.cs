@@ -31,14 +31,18 @@ namespace atbApi
         {
             private static IDictionary<String, String> emptyMap = new Dictionary<String, String>();
 
-            protected void parseData(IDictionary<String, String> values)
+            public BaseValues()
             {
-                parseData(values, emptyMap);
             }
 
-            protected void parseData(IDictionary<String, String> values, PlantDb pdb = null, SoilDb sdb = null, ClimateDb cdb = null)
+            protected void parseData(IDictionary<String, String> values, CultureInfo cultureInfo = null)
             {
-                parseData(values, emptyMap, pdb, sdb, cdb);
+                parseData(values, emptyMap, cultureInfo: cultureInfo);
+            }
+
+            protected void parseData(IDictionary<String, String> values, PlantDb pdb = null, SoilDb sdb = null, ClimateDb cdb = null, CultureInfo cultureInfo = null)
+            {
+                parseData(values, emptyMap, pdb, sdb, cdb, cultureInfo: cultureInfo);
             }
 
             /*!
@@ -48,7 +52,7 @@ namespace atbApi
              * \param   nameDict    Dictionary of names. 'property name' => 'csv-field name'
              */
 
-            protected void parseData(IDictionary<String, String> values, IDictionary<String, String> nameDict, PlantDb pdb = null, SoilDb sdb = null, ClimateDb cdb = null)
+            protected void parseData(IDictionary<String, String> values, IDictionary<String, String> nameDict, PlantDb pdb = null, SoilDb sdb = null, ClimateDb cdb = null, CultureInfo cultureInfo = null)
             {
                 //use this for .net 4.0
                 //foreach (PropertyInfo pi in this.GetType().GetProperties())
@@ -72,7 +76,7 @@ namespace atbApi
                     }
                     else if (type == typeof(Double))
                     {
-                        pi.SetValue(this, Double.Parse(value, CultureInfo.InvariantCulture), null);
+                        pi.SetValue(this, Double.Parse(value, cultureInfo != null ? cultureInfo : CultureInfo.InvariantCulture), null);
                     }
                     //use this for .net 4.0
                     //else if (type.IsEnum)
