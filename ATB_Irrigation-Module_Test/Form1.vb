@@ -191,7 +191,7 @@ Public Class Form1
             climateDb.addClimate(climateStream, atbApi.data.TimeStep.month, cultureInfo)
         Next
 
-        Dim cSFile = "..\..\..\testdata\DHI_Field_IWRM_cropSequences_test.csv"
+        Dim cSFile = "..\..\..\testdata\DHI_Field_IWRM_cropSequences_example_Updated.csv"
         Dim cSStream As FileStream = File.OpenRead(cSFile)
         Dim cS As atbApi.data.CropSequence = _
             New atbApi.data.CropSequence(cSStream, atbApi.data.LocalPlantDb.Instance, atbApi.data.LocalSoilDb.Instance, climateDb)

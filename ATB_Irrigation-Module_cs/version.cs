@@ -25,8 +25,8 @@ namespace version
     {
         public const String VERSION_MAJOR = "1";
         public const String VERSION_MINOR = "0";
-        public const String VERSION_REVISION = "36";
-        public const String VERSION_BUILD = "506";
+        public const String VERSION_REVISION = "37";
+        public const String VERSION_BUILD = "514";
         public const String VER_FILE_VERSION_STR = VERSION_MAJOR + "." + VERSION_MINOR + "." + VERSION_REVISION + "." + VERSION_BUILD;
 
 #if _WIN64
