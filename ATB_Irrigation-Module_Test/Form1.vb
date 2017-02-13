@@ -146,21 +146,22 @@ Public Class Form1
         Dim plant As atbApi.data.Plant = New atbApi.data.Plant("ATB_barley_oats_wheat_april")
         'create soil from dll internal standard soils
         Dim soil As atbApi.data.Soil = New atbApi.data.Soil("USDA-soilclass_sandy_loam")
-        'create new soil water conditions if sequential calculation starts
-        'it is important, to keep transpirationResult.lastConditions and use this
-        'instead for consecutive crops on the same field
-        Dim soilConditions As atbApi.data.SoilConditions = New atbApi.data.SoilConditions()
         'define seedDate and harvestDate
         Dim seedDate As DateTime = New DateTime(2015, 4, 12, 0, 0, 0, DateTimeKind.Utc)
         Dim harvestDate As DateTime = New DateTime(2015, 10, 5, 0, 0, 0, DateTimeKind.Utc)
         'start calculation
-        Dim etResult As atbApi.ETResult = New atbApi.ETResult
-        Dim etArgs As atbApi.ETArgs = New atbApi.ETArgs
 
-        '        Dim transpirationResult As atbApi.TranspirationResult = atbApi.Transpiration.TranspirationCalc(climate, plant, soil, Nothing, location, seedDate, harvestDate, soilConditions, False)
-        '       TextBox1.AppendText("et0:" + transpirationResult.et0.ToString() + " runtimeMs:" + transpirationResult.runtimeMs.ToString("F3") + vbNewLine)
-        'keep this for next calculation on this field
-        '      Dim nextSoilConditions As atbApi.data.SoilConditions = transpirationResult.lastConditions
+        Dim etArgs As atbApi.ETArgs = New atbApi.ETArgs
+        etArgs.climate = climate
+        etArgs.soil = soil
+        etArgs.plant = plant
+        etArgs.seedDate = seedDate
+        etArgs.harvestDate = harvestDate
+        etArgs.location = climate.location
+        Dim etResult As atbApi.ETResult = Nothing
+        atbApi.Transpiration.ETCalc(etArgs, etResult)
+
+        TextBox1.AppendText("et0:" + etResult.et0.ToString() + " runtimeMs:" + etResult.runtimeMs.ToString("F3") + vbNewLine)
     End Sub
 
 

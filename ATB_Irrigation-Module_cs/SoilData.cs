@@ -181,7 +181,7 @@ namespace atbApi
             /*! wilting point [m³/m³] or unitless */
             public double Qwp { get; set; }
             /*! depth of evaporation layer [m] */
-            public double Ze { get; set; }
+            public double? Ze { get; set; }
             /*! humus content [%] */
             public double humus { get; set; }
 
@@ -192,7 +192,7 @@ namespace atbApi
                 // propertyMapper.Add("qfc", "fieldCapacity");
             }
 
-            public new void parseData(IDictionary<String, String> values)
+            public void parseData(IDictionary<String, String> values)
             {
                 this.Ze = 0.1;
                 base.parseData(values, propertyMapper);

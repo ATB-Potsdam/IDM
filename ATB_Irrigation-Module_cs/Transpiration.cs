@@ -173,7 +173,6 @@ namespace atbApi
     */
     public class ETArgs
     {
-        public ETResult result { get; set; }
         public Climate climate { get; set; }
         public Plant plant { get; set; }
         public Soil soil { get; set; }
@@ -181,8 +180,8 @@ namespace atbApi
         public DateTime seedDate { get; set; }
         public DateTime harvestDate { get; set; }
         public bool adaptStageLength { get; set; }
-        public DateTime start { get; set; }
-        public DateTime end { get; set; }
+        public DateTime? start { get; set; }
+        public DateTime? end { get; set; }
         //from here optional arguments
         public IrrigationSchedule irrigationSchedule { get; set; }
         public SoilConditions lastConditions { get; set; }
@@ -438,7 +437,7 @@ namespace atbApi
         {
             var et0Result = new Et0Result();
 
-            for (DateTime loopDate = args.start; loopDate <= args.end; loopDate = loopDate.AddDays(1))
+            for (DateTime loopDate = (DateTime)args.start; loopDate <= (DateTime)args.end; loopDate = loopDate.AddDays(1))
             {
                 var loopResult = new ETDailyValues();
                 result.dailyValues.Add(loopDate, loopResult);

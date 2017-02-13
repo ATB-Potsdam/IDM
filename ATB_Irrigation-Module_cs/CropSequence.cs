@@ -41,7 +41,7 @@ namespace atbApi
 
             private static IDictionary<String, String> propertyMapper = new Dictionary<String, String>();
 
-            public new void parseData(IDictionary<String, String> values, PlantDb pdb = null, SoilDb sdb = null, ClimateDb cdb = null)
+            public void parseData(IDictionary<String, String> values, PlantDb pdb = null, SoilDb sdb = null, ClimateDb cdb = null)
             {
                 base.parseData(values, propertyMapper, pdb: pdb, sdb: sdb, cdb: cdb);
             }
@@ -277,6 +277,8 @@ namespace atbApi
                     if (_results.ContainsKey(csIndex))
                     {
                         tmpResult = _results[csIndex];
+                        tmpArgs.lastConditions = tmpResult.lastConditions;
+                        tmpResult.lastConditions = null;
                     }
                     Transpiration.ETCalc(ref tmpArgs, ref tmpResult);
                     _results[csIndex] = tmpResult;
