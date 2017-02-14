@@ -51,7 +51,6 @@ namespace atbApi
             PlantValues plantSet,
             ClimateValues climateSet,
             IrrigationType irrigationType,
-            IrrigationType autoIrrigationType,
             double et0,
             double eFactor,
             double tew,
@@ -87,8 +86,7 @@ namespace atbApi
             result.fc = fc;
 
             var few = Math.Min(1 - fc, Math.Min(irrigationFw, autoIrrigationFw));
-            if ((netIrrigation > 0 || autoNetIrrigationTc > 0) &&
-                ((irrigationType.name == "drip") || (autoIrrigationType.name == "drip")))
+            if ((netIrrigation > 0 || autoNetIrrigationTc > 0) && (irrigationType.name == "drip"))
             {
                 few = Math.Min(1 - fc, (1 - (2 / 3) * fc) * Math.Min(irrigationFw, autoIrrigationFw));
             }

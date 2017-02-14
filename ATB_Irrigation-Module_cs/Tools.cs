@@ -28,6 +28,31 @@ namespace local
 
     internal static class Tools
     {
+        internal static readonly Type[] NumericTypes = new[]
+        {
+            typeof(int), typeof(double), typeof(decimal),
+            typeof(long), typeof(short), typeof(sbyte),
+            typeof(byte), typeof(ulong), typeof(ushort),
+            typeof(uint), typeof(float)
+        };
+
+        internal static bool IsNumeric(Type type)
+        {
+            if (type.GetGenericTypeDefinition() == typeof(Nullable<>))
+            {
+                return IsNumeric(Nullable.GetUnderlyingType(type));
+            }
+
+            return NumericTypes.Contains(type);
+        }
+
+        internal static T Add<T, S>(T num1, S num2)
+        {
+            dynamic a = num1;
+            dynamic b = num2;
+            return a + b;
+        }
+        
         internal static double Linear_day(int iterator, int startIterator, int endIterator, double startValue, double endValue)
         {
             return (iterator - startIterator) * (endValue - startValue) / (endIterator - startIterator + 1) + startValue;
