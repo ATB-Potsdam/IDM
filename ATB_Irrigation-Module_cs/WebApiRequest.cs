@@ -38,6 +38,7 @@ namespace local
         private const String SpongeJsAuthUrl = "https://agrohyd-api-dev.runlevel3.de/auth";
         private const String SpongeJsUrlDataLocation = "https://agrohyd-api-dev.runlevel3.de/ParameterSetData/getByTagTypeLocation/{0}/climate/{1}/{2}/date%3A{3}?end=date%3A{4}&step=date%3A{5}&format=csv";
         private const String SpongeJsUrlDataId = "https://agrohyd-api-dev.runlevel3.de/ParameterSetData/getByDataObjId/{0}/date%3A{1}?end=date%3A{2}&step=date%3A{3}&format=csv";
+        private const String SpongeJsUrlBaseDataId = "https://agrohyd-api-dev.runlevel3.de/DataObj/getBaseData/{0}";
         private const String SpongeJsUrlAllIds = "https://agrohyd-api-dev.runlevel3.de/DataObjRaw/getIdNamesByType/climate?tag={0}&format=csv";
         private const String SpongeJsUrlAltitude = "https://agrohyd-api-dev.runlevel3.de/Tools/getAltitude/{0}/{1}";
         private static String SpongeJsUser = "irri_mod_user";
@@ -104,6 +105,27 @@ namespace local
             catch
             {
                 return null;
+            }
+        }
+
+        internal static async Task<Double> LoadBaseDataByIdFromATBWebService(String dataObjId)
+        {
+            try
+            {
+                String url = String.Format(
+                    SpongeJsUrlBaseDataId,
+                    dataObjId
+                );
+                Stream webResponse = await ExecuteWebApiRequest(url);
+                StreamReader altReader = new StreamReader(webResponse);
+                String altResult = altReader.ReadToEnd();
+                if (!altResult.Contains("result")) return 0;
+                altResult = altResult.Split(':')[1].Replace('}', ' ').Trim();
+                return Int32.Parse(altResult);
+            }
+            catch
+            {
+                return 0;
             }
         }
 

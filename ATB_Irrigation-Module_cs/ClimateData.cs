@@ -384,6 +384,7 @@ namespace atbApi
             {
                 if (String.IsNullOrEmpty(_dataObjId)) return 0;
 
+                var baseData = await WebApiRequest.LoadBaseDataByIdFromATBWebService(_dataObjId);
                 if (_start == null || _start > start || _end == null || _end < end)
                 {
                     return loadCsv(await WebApiRequest.LoadClimateByIdFromATBWebService(_dataObjId, start, end, this._step));
