@@ -385,6 +385,15 @@ namespace atbApi
                 if (String.IsNullOrEmpty(_dataObjId)) return 0;
 
                 var baseData = await WebApiRequest.LoadBaseDataByIdFromATBWebService(_dataObjId);
+                if (baseData["location"] != null)
+                {
+                    _location.lon = (double)baseData["location"][0];
+                    _location.lat = (double)baseData["location"][1];
+                    if (baseData["altitude"] != null)
+                    {
+                        _location.alt = (double)baseData["altitude"];
+                    }
+                }
                 if (_start == null || _start > start || _end == null || _end < end)
                 {
                     return loadCsv(await WebApiRequest.LoadClimateByIdFromATBWebService(_dataObjId, start, end, this._step));

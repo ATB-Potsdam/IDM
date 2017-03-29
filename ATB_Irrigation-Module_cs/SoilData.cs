@@ -254,7 +254,7 @@ namespace atbApi
                     IDictionary<Double, SoilValues> soilValues = soilData[name];
                     SoilValues values = new SoilValues();
                     values.parseData(fields);
-                    Double _iterator = Math.Round(Double.Parse(fields["_iterator.z"], CultureInfo.InvariantCulture), 2);
+                    Double _iterator = Math.Round(Double.Parse(fields["_iterator.z"], CultureInfo.InvariantCulture), 2, MidpointRounding.AwayFromZero);
                     soilValues.Add(_iterator, values);
                     if (!maxDepth.ContainsKey(name))
                     {
@@ -434,7 +434,7 @@ namespace atbApi
                 if (soilData == null) return null;
 
                 SoilValues resultSet;
-                Double _z = Math.Round(z, 2);
+                Double _z = Math.Round(z, 2, MidpointRounding.AwayFromZero);
                 bool hasSet = soilData.TryGetValue(_z, out resultSet);
                 if (hasSet) return resultSet;
                 //try to get default set for average soils with only default set

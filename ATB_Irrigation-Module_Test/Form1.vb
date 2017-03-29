@@ -133,22 +133,28 @@ Public Class Form1
 
 
     Private Async Sub Button7_Click(sender As Object, e As EventArgs) Handles Button7.Click
-        Dim climate As atbApi.data.Climate = New atbApi.data.Climate("DWD_03987_Potsdam", "53c6b30845900e364c000013", atbApi.data.TimeStep.day)
+        'Dim climate As atbApi.data.Climate = New atbApi.data.Climate("DWD_03987_Potsdam", "53c6b30845900e364c000013", atbApi.data.TimeStep.day)
+        Dim climate As atbApi.data.Climate = New atbApi.data.Climate("UEA_CRU_timeseries_v3.21_52.25_32.75", "53506649594fa52d48007088", atbApi.data.TimeStep.day)
+
         'define interval to load climate data
-        Dim climateStart As DateTime = New DateTime(2015, 1, 1, 0, 0, 0, DateTimeKind.Utc)
-        Dim climateEnd As DateTime = New DateTime(2015, 12, 31, 0, 0, 0, DateTimeKind.Utc)
+        'Dim climateStart As DateTime = New DateTime(2015, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+        'Dim climateEnd As DateTime = New DateTime(2015, 12, 31, 0, 0, 0, DateTimeKind.Utc)
+        Dim climateStart As DateTime = New DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+        Dim climateEnd As DateTime = New DateTime(2001, 12, 31, 0, 0, 0, DateTimeKind.Utc)
         'load data asyncron from webservice
         Dim count As Integer = Await climate.loadClimateByIdFromATBWebService(climateStart, climateEnd)
 
         'load altitude from webservice
         'Dim altitude As Double = Await climate.loadAltitudeFromATBWebService(climate.location)
         'create plant from dll internal plant database
-        Dim plant As atbApi.data.Plant = New atbApi.data.Plant("ATB_barley_oats_wheat_april")
+        Dim plant As atbApi.data.Plant = New atbApi.data.Plant("IWRM_wheat_III")
         'create soil from dll internal standard soils
-        Dim soil As atbApi.data.Soil = New atbApi.data.Soil("USDA-soilclass_sandy_loam")
+        Dim soil As atbApi.data.Soil = New atbApi.data.Soil("Iran_IWRM_ESF19")
         'define seedDate and harvestDate
-        Dim seedDate As DateTime = New DateTime(2015, 4, 12, 0, 0, 0, DateTimeKind.Utc)
-        Dim harvestDate As DateTime = New DateTime(2015, 10, 5, 0, 0, 0, DateTimeKind.Utc)
+        'Dim seedDate As DateTime = New DateTime(2015, 4, 12, 0, 0, 0, DateTimeKind.Utc)
+        'Dim harvestDate As DateTime = New DateTime(2015, 10, 5, 0, 0, 0, DateTimeKind.Utc)
+        Dim seedDate As DateTime = New DateTime(2000, 7, 1, 0, 0, 0, DateTimeKind.Utc)
+        Dim harvestDate As DateTime = New DateTime(2001, 4, 15, 0, 0, 0, DateTimeKind.Utc)
         'start calculation
 
         Dim etArgs As atbApi.ETArgs = New atbApi.ETArgs
@@ -159,9 +165,25 @@ Public Class Form1
         etArgs.harvestDate = harvestDate
         etArgs.location = climate.location
         Dim etResult As atbApi.ETResult = Nothing
-        atbApi.Transpiration.ETCalc(etArgs, etResult)
+        Dim startDate As DateTime = New DateTime(seedDate.Year, seedDate.Month, 1, 0, 0, 0, seedDate.Kind)
+        Dim endDate As DateTime = New DateTime(seedDate.Year, seedDate.Month, DateTime.DaysInMonth(seedDate.Year, seedDate.Month), 0, 0, 0, seedDate.Kind)
+        'etArgs.autoIrr = New atbApi.data.AutoIrrigationControl()
+        etArgs.autoIrr = New atbApi.data.AutoIrrigationControl(level:=0, cutoff:=0.1)
 
+
+
+        Do
+            etArgs.start = startDate
+            etArgs.end = endDate
+            atbApi.Transpiration.ETCalc(etArgs, etResult)
+            startDate = startDate.AddMonths(1)
+            endDate = endDate.AddMonths(1)
+            endDate = New DateTime(endDate.Year, endDate.Month, DateTime.DaysInMonth(endDate.Year, endDate.Month), 0, 0, 0, endDate.Kind)
+        Loop While startDate < harvestDate
         TextBox1.AppendText("et0:" + etResult.et0.ToString() + " runtimeMs:" + etResult.runtimeMs.ToString("F3") + vbNewLine)
+        For Each item In etResult.dailyValues
+            TextBox1.AppendText(item.Key.ToString() + ": dpRz: " + item.Value.dpRz.ToString() + " tAct: " + item.Value.tAct.ToString() + vbNewLine)
+        Next
     End Sub
 
 
@@ -198,10 +220,20 @@ Public Class Form1
             New atbApi.data.CropSequence(cSStream, atbApi.data.LocalPlantDb.Instance, atbApi.data.LocalSoilDb.Instance, climateDb)
 
 
-        Dim startDate As DateTime = New DateTime(2001, 1, 1, 0, 0, 0, DateTimeKind.Utc)
-        Dim endDate As DateTime = New DateTime(2001, 12, 31, 0, 0, 0, DateTimeKind.Utc)
+        Dim loopDate As DateTime = New DateTime(2001, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+        Dim loopEnd As DateTime = New DateTime(2010, 12, 31, 0, 0, 0, DateTimeKind.Utc)
         Dim etArgs As New atbApi.ETArgs()
-        Dim result As IDictionary(Of String, atbApi.ETResult)
-        result = cS.runCropSequence(start:=startDate, end:=endDate, step:=atbApi.data.TimeStep.day, etArgs:=etArgs)
+        etArgs.autoIrr = New atbApi.data.AutoIrrigationControl(level:=0, cutoff:=0.1)
+        Dim result As Dictionary(Of String, atbApi.ETResult)
+
+        Do
+            Dim endDate As DateTime = New DateTime(loopDate.Year, loopDate.Month, DateTime.DaysInMonth(loopDate.Year, loopDate.Month), 0, 0, 0, loopDate.Kind)
+            result = cS.runCropSequence(start:=loopDate, end:=endDate, step:=atbApi.data.TimeStep.day, etArgs:=etArgs)
+            loopDate = loopDate.AddMonths(1)
+        Loop While loopDate < loopEnd
+
+        For Each item In result
+            TextBox1.AppendText(item.Key + ": autoNetIrr: " + item.Value.autoNetIrrigation.ToString() + " tAct: " + item.Value.tAct.ToString() + vbNewLine)
+        Next
     End Sub
 End Class

@@ -70,7 +70,7 @@ namespace atbApi
             /*! plant height */
             public Double? height { get; set; }
             /*! true if this object is a fallow */
-            public Boolean? isFallow { get; set; }
+            public bool isFallow { get; set; }
             /*! botanical name  */
             public String botanicalName { get; set; }
             /*! german name */
@@ -366,13 +366,13 @@ namespace atbApi
                 if (DateTime.Compare(date, seedDate) < 0) return null;
 
                 //build rounded dates to calculate with full days
-                DateTime _date = new DateTime(seedDate.Year, seedDate.Month, seedDate.Day, 0, 0, 0);
+                DateTime _date = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0);
                 DateTime _seedDate = new DateTime(seedDate.Year, seedDate.Month, seedDate.Day, 0, 0, 0);
                 DateTime _harvestDate = new DateTime(harvestDate.Year, harvestDate.Month, harvestDate.Day, 0, 0, 0);
 
                 var interval = (_harvestDate - _seedDate).TotalDays;
 
-                int day = (int)Math.Round((_date - _seedDate).TotalDays * (stageTotal / interval));
+                int day = (int)Math.Round((_date - _seedDate).TotalDays * (stageTotal / interval), MidpointRounding.AwayFromZero);
                 if (day < 1) day = 1;
                 if (day > stageTotal) day = stageTotal;
 

@@ -1,15 +1,17 @@
 ﻿namespace local
 {
-    /*
-    internal static class MeanValue
+    public class MeanValue
     {
         private int num = 0;
         private double sum = 0;
 
-        public double Value()
+        public double value
         {
-            if (num == 0) return 0;
-            return  sum / num;
+            get
+            {
+                if (num == 0) return 0;
+                return sum / num;
+            }
         }
 
         public void Add(double value)
@@ -18,5 +20,4 @@
             num++;
         }
     }
-     */
 }

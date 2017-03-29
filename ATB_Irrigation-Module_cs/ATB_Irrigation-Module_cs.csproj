@@ -68,10 +68,16 @@
   <ItemGroup>
     <EmbeddedResource Include="IWRM_ATB-SoilData.csv.gz" />
     <EmbeddedResource Include="IWRM_ALL-PlantData.csv.gz" />
+    <None Include="packages.config" />
     <None Include="rl3SignKey.snk" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Service References\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\portable-net45+wp80+win8+wpa81\Newtonsoft.Json.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <PropertyGroup>

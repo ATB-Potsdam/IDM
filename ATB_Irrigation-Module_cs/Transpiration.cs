@@ -294,29 +294,18 @@ namespace atbApi
         public double autoNetIrrigation { get; set; }
         /*! interceptionAutoIrrTc[mm], unit: "mm", description: Additional interception for the automated irrigated water. */
         public double interceptionAutoIrr { get; set; }
-        /*! balanceErrorTc[mm], unit: "mm", description: Overall balance error for E plus T calculation between input water and output. The equation is: "precipitation + netIrrigation + drDiffTc - interception - interceptionIrr - e - tAct - dpDzTc + autoNetIrrigationTc - interceptionAutoIrrTc". This value must be near zero. If larger than 1E-3 the balance has gaps. */
-        public double balanceError { get; set; }
-        /*! kcIni, unit: "none", description: Result from kcIni model, calculated crop coefficient for initial plant stage. */
-        public double kcIni { get; set; }
         /*! ksMeanTcInitial, unit: "none", description: Mean value for water stress factor "Ks" in initial stage of plant growing for E plus T calculation. */
-//        public MeanValue ksMeanInitial { get; set; }
         /*! ksMeanTcDevelopment, unit: "none", description: Mean value for water stress factor "Ks" in development stage of plant growing for E plus T calculation. */
-//        public MeanValue ksMeanDevelopment { get; set; }
         /*! ksMeanTcMid_season, unit: "none", description: Mean value for water stress factor "Ks" in mid-season stage of plant growing for E plus T calculation. */
-//        public MeanValue ksMeanMid_season { get; set; }
         /*! ksMeanTcLate_season, unit: "none", description: Mean value for water stress factor "Ks" in late-season stage of plant growing for E plus T calculation. */
-//        public MeanValue ksMeanLate_season { get; set; }
+        public IDictionary<PlantStage, MeanValue> ksMeanValues { get; set; }
         /*! yieldReductionTc, unit: "none", description: Yield reduction factor due to water stress in initial stage of plant growing for E plus T calculation. */
         public double yieldReduction { get; set; }
         /*! yieldReductionTcInitial, unit: "none", description: Yield reduction factor due to water stress in initial stage of plant growing for E plus T calculation. */
-        public double yieldReductionInitial { get; set; }
         /*! yieldReductionTcDevelopment, unit: "none", description: Yield reduction factor due to water stress in development stage of plant growing for E plus T calculation. */
-        public double yieldReductionDevelopment { get; set; }
         /*! yieldReductionTcMid_season, unit: "none", description: Yield reduction factor due to water stress in mid_season stage of plant growing for E plus T calculation. */
-        public double yieldReductionMid_season { get; set; }
         /*! yieldReductionTcLate_season, unit: "none", description: Yield reduction factor due to water stress in late_season stage of plant growing for E plus T calculation. */
-        public double yieldReductionLate_season { get; set; }
-
+        public IDictionary<PlantStage, double> yieldReductionValues { get; set; }
         /*! dailyValues, description: Each line contains values for one day from "seedDate" to "harvestDate". This includes input values, intermediate results, evaporation, transpiration, evapotranspiration and soil water balance. */
         public IDictionary<DateTime, ETDailyValues> dailyValues { get; set; }
         internal TransientValues tValues { get; set; }
@@ -325,6 +314,10 @@ namespace atbApi
         {
             dailyValues = new Dictionary<DateTime, ETDailyValues>();
             tValues = new TransientValues();
+            ksMeanValues = new Dictionary<PlantStage, MeanValue>();
+            yieldReductionValues = new Dictionary<PlantStage, double>();
+            irrigationFw = 1;
+            autoIrrigationFw = 1;
         }
     }
 
@@ -369,13 +362,9 @@ namespace atbApi
         public double autoNetIrrigation { get; set; }
         /*! interceptionAutoIrrTc[mm], unit: "mm", description: Additional interception for the automated irrigated water. */
         public double interceptionAutoIrr { get; set; }
-        /*! balanceErrorTc[mm], unit: "mm", description: Overall balance error for E plus T calculation between input water and output. The equation is: "precipitation + netIrrigation + drDiffTc - interception - interceptionIrr - e - tAct - dpDzTc + autoNetIrrigationTc - interceptionAutoIrrTc". This value must be near zero. If larger than 1E-3 the balance has gaps. */
-        public double balanceError { get; set; }
         public int plantDay { get; set; }
         public double plantZr { get; set; }
         public String plantStage { get; set; }
-        public double kc { get; set; }
-        public double kcAdj { get; set; }
         public double kcb { get; set; }
         public double kcbAdj { get; set; }
         public double de { get; set; }
@@ -383,7 +372,6 @@ namespace atbApi
         public double tawRz { get; set; }
         public double tawDz { get; set; }
         public double ks { get; set; }
-        public Double? yieldReduction { get; set; }
         public double pAdj { get; set; }
         public double raw { get; set; }
         public double drRzExceeded { get; set; }
@@ -391,6 +379,13 @@ namespace atbApi
         public double precIrrEff { get; set; }
         public double soilStorageEff { get; set; }
         public EvaporationResult eResult { get; set; }
+
+        public ETDailyValues()
+        {
+            eResult = new EvaporationResult();
+            irrigationFw = 1;
+            autoIrrigationFw = 1;
+        }
     }
 
 
@@ -417,9 +412,16 @@ namespace atbApi
             ref ETResult result
         )
         {
-            var profileStart = DateTime.Now;
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
             //result is not empty, assume this is a continued calculation, just continue loop
-            if (result != null) return ETCalcLoop(ref args, ref result, profileStart);
+            if (result != null) {
+                if (args.lastConditions == null && result.lastConditions != null)
+                {
+                    args.lastConditions = result.lastConditions;
+                }
+                return ETCalcLoop(ref args, ref result, stopWatch);
+            }
 
             result = new ETResult();
             result.error = ETTools.CheckArgs(ref args);
@@ -448,32 +450,44 @@ namespace atbApi
             //adjust soil water balance for moved root zone
             args.lastConditions = SoilConditionTools.AdjustSoilConditionsZr(args.lastConditions, result.tValues.tawRz, result.tValues.tawDz, (double)plantSetStart.Zr, args.soil.maxDepth);
 
-            result.drDiff = -(args.lastConditions.drRz + args.lastConditions.drDz);
+            //stored in first loop
+            // result.drDiff = -(args.lastConditions.drRz + args.lastConditions.drDz);
 
-            return ETCalcLoop(ref args, ref result, profileStart);
+            return ETCalcLoop(ref args, ref result, stopWatch);
         }
 
 
         private static bool ETCalcLoop(
             ref ETArgs args,
             ref ETResult result,
-            DateTime profileStart
+            Stopwatch stopWatch
         )
         {
             var et0Result = new Et0Result();
 
             for (DateTime loopDate = (DateTime)args.start; loopDate <= (DateTime)args.end; loopDate = loopDate.AddDays(1))
             {
+                var plantDay = args.plant.getPlantDay(loopDate, args.seedDate, args.harvestDate);
+                if (plantDay == null) continue;
+
                 var loopResult = new ETDailyValues();
                 result.dailyValues.Add(loopDate, loopResult);
 
                 var climateSet = args.climate.getValues(loopDate);
-                var plantDay = args.plant.getPlantDay(loopDate, args.seedDate, args.harvestDate);
-                if (plantDay == null) continue;
+                if (climateSet == null)
+                {
+                    result.error = "No climate data for dataset: " + args.climate.name + " at date: " + loopDate.ToString() + ", cannot continue!";
+                    return false;
+                }
                 var plantSet = args.plant.getValues(plantDay);
                 var stageName = Enum.GetName(plantSet.stage.GetType(), plantSet.stage.Value);
-                var soilSet = args.soil.getValues(Math.Min(args.lastConditions.zr, args.soil.maxDepth));
-                if (!Et0.Et0Calc(args.climate, loopDate, args.location, args.et0PmArgs, args.et0HgArgs, ref et0Result)) return false;
+                var zr = Math.Min(args.soil.maxDepth, (double)plantSet.Zr);
+                var soilSet = args.soil.getValues(zr);
+                if (!Et0.Et0Calc(args.climate, loopDate, args.location, args.et0PmArgs, args.et0HgArgs, ref et0Result))
+                {
+                    result.error = "Cannot caluculate ET0 for dataset: " + args.climate.name + " at date: " + loopDate.ToString() + ", cannot continue!";
+                    return false;
+                }
                 loopResult.et0 = (double)et0Result.et0;
 
                 loopResult.irrigation = 0.0;
@@ -485,13 +499,13 @@ namespace atbApi
                 loopResult.autoNetIrrigation = 0.0;
 
                 //common calculations for Tc and ETc
-                var zr = Math.Min(args.soil.maxDepth, (double)plantSet.Zr);
                 //taw in root zone
                 var tawRz = 1000 * (soilSet.Qfc - soilSet.Qwp) * zr;
                 //taw in deep zone
                 var tawDz = result.tValues.tawMax - tawRz;
                 var ze = soilSet.Ze != null ? (double)soilSet.Ze : 0.1;
-                var tew = 1000 * (soilSet.Qfc - 0.5 * soilSet.Qwp) * ze;
+                var soilSetZe = args.soil.getValues(ze);
+                var tew = 1000 * (soilSetZe.Qfc - 0.5 * soilSetZe.Qwp) * ze;
                 var cf = (1 - Math.Exp(-(double)plantSet.LAI * 0.385));
 
                 loopResult.kcbAdj= (double)plantSet.Kcb;
@@ -526,19 +540,45 @@ namespace atbApi
                     )
                 ) autoIrrWindow = false;
 
-                if (args.autoIrr != null && autoIrrWindow && !(bool)plantSet.isFallow && tawRz != 0)
+
+                if (args.autoIrr != null && autoIrrWindow && !plantSet.isFallow && tawRz != 0)
                 {
-                    if (soilSaturation < args.autoIrr.level)
-                    {
-                        loopResult.autoIrrigation = args.autoIrr.amount;
-                        loopResult.autoNetIrrigation = loopResult.autoIrrigation * args.autoIrr.type.fw;
-                        if (args.autoIrr.amount == 0)
-                        {
-                            //irrigate to given saturation
-                            if (soilSaturation < args.autoIrr.cutoff)
-                                loopResult.autoNetIrrigation = (args.autoIrr.cutoff - soilSaturation) * tawRz - loopResult.netIrrigation;
-                            loopResult.autoIrrigation = loopResult.autoNetIrrigation / args.autoIrr.type.fw;
+                    if (args.autoIrr.level == 0) {
+                        if (soilSaturation < 1 - loopResult.pAdj) {
+                            loopResult.autoIrrigation = args.autoIrr.amount;
+                            loopResult.autoNetIrrigation = loopResult.autoIrrigation * args.autoIrr.type.fw;
+                            if (args.autoIrr.amount == 0)
+                            {
+                                loopResult.autoNetIrrigation = (1 - loopResult.pAdj - soilSaturation + args.autoIrr.cutoff) * tawRz - loopResult.netIrrigation;
+                                loopResult.autoIrrigation = loopResult.autoNetIrrigation / args.autoIrr.type.fw;
+                            }
                         }
+                    }
+                    else {
+                        if (soilSaturation < args.autoIrr.level)
+                        {
+                            loopResult.autoIrrigation = args.autoIrr.amount;
+                            loopResult.autoIrrigationFw = args.autoIrr.type.fw;
+                            loopResult.autoNetIrrigation = loopResult.autoIrrigation * args.autoIrr.type.fw;
+                            if (args.autoIrr.amount == 0)
+                            {
+                                //irrigate to given saturation
+                                if (soilSaturation < args.autoIrr.cutoff)
+                                    loopResult.autoNetIrrigation = (args.autoIrr.cutoff - soilSaturation) * tawRz - loopResult.netIrrigation;
+                                loopResult.autoIrrigation = loopResult.autoNetIrrigation / args.autoIrr.type.fw;
+                            }
+                        }
+                    }
+                        
+                    if (loopResult.autoIrrigation != 0 && args.autoIrr.type.min != 0)
+                    {
+                        loopResult.autoIrrigation = Math.Max(loopResult.autoIrrigation, args.autoIrr.type.min);
+                        loopResult.autoNetIrrigation = loopResult.autoIrrigation * args.autoIrr.type.fw;
+                    }
+                    if (loopResult.autoIrrigation != 0 && args.autoIrr.type.max != 0)
+                    {
+                        loopResult.autoIrrigation = Math.Min(loopResult.autoIrrigation, args.autoIrr.type.max);
+                        loopResult.autoNetIrrigation = loopResult.autoIrrigation * args.autoIrr.type.fw;
                     }
                 }
 
@@ -570,10 +610,31 @@ namespace atbApi
                 loopResult.precipitation = (double)climateSet.precipitation;
                 loopResult.tawRz = tawRz;
                 loopResult.tawDz = tawDz;
-
+                loopResult.raw = tawRz * loopResult.pAdj;
+                loopResult.ks = loopResult.raw != 0 ? 1 : 0;
+                if ((args.lastConditions.drRz > loopResult.raw && loopResult.raw != 0) && !plantSet.isFallow)
+                {
+                    loopResult.ks = Math.Max(0, (tawRz - args.lastConditions.drRz) / (tawRz - loopResult.raw));
+                }
+                loopResult.tAct = loopResult.t * loopResult.ks;
+                if (loopResult.tAct < 0.001) loopResult.tAct = 0;
+                if (plantSet.stage != null)
+                {
+                    if (!result.ksMeanValues.ContainsKey((PlantStage)plantSet.stage))
+                    {
+                        result.ksMeanValues.Add((PlantStage)plantSet.stage, new MeanValue());
+                        result.yieldReductionValues.Add((PlantStage)plantSet.stage, 0.0);
+                    }
+                    result.ksMeanValues[(PlantStage)plantSet.stage].Add(loopResult.ks);
+                    if (plantSet.Ky != null) {
+                        result.ksMeanValues[(PlantStage)plantSet.stage].Add(loopResult.ks);
+                        result.yieldReductionValues[(PlantStage)plantSet.stage] = (double)plantSet.Ky * (1 - result.ksMeanValues[(PlantStage)plantSet.stage].value);
+                    }
+                }
 
                 var eConditions = args.lastConditions;
-                var eResult = Evaporation.ECalculation(
+                var eResult = loopResult.eResult;
+                Evaporation.ECalculation(
                     ref eConditions,
                     plantSet,
                     climateSet,
@@ -587,21 +648,32 @@ namespace atbApi
                     loopResult.autoNetIrrigation,
                     loopResult.interception,
                     loopResult.interceptionIrr,
-                    loopResult.interceptionAutoIrr
+                    loopResult.interceptionAutoIrr,
+                    ref eResult
                 );
                 args.lastConditions = eConditions;
+                loopResult.eResult = eResult;
+                if (eResult.e < 0.001) eResult.e = 0;
                 loopResult.e = eResult.e;
                 loopResult.eAct = eResult.e;
                 loopResult.de = eResult.de;
                 loopResult.dpe = eResult.dpe;
-                loopResult.eResult = eResult;
-
 
                 //adjust moved zone border
-                //SoilConditionTools.AdjustSoilConditionsDualZr(ref lastConditions, tawRz, tawDz, (double)plantSet.Zr, maxDepth);
+                //moved border rootZone -> adjust drainage
+                if (Math.Min((double)plantSet.Zr, args.soil.maxDepth) != args.lastConditions.zr)
+                {
+                    var dzDepth = args.soil.maxDepth - args.lastConditions.zr;
+                    var zDiff = (double)plantSet.Zr - args.lastConditions.zr;
+                    var drDiff = zDiff * args.lastConditions.drDz / dzDepth;
+                    args.lastConditions.drRz += drDiff;
+                    args.lastConditions.drDz -= drDiff;
+                }
+
+                //args.lastConditions = SoilConditionTools.AdjustSoilConditionsZr(args.lastConditions, tawRz, tawDz, (double)plantSet.Zr, args.soil.maxDepth);
                 //calculate soil water balance
                 loopResult.dpRz = Math.Max(0, loopResult.netPrecipitation - loopResult.e - loopResult.t - args.lastConditions.drRz);
-                loopResult.drRz = args.lastConditions.drRz - loopResult.netPrecipitation + loopResult.e + loopResult.t + loopResult.dpRz;
+                loopResult.drRz = args.lastConditions.drRz - loopResult.netPrecipitation + loopResult.e + loopResult.tAct + loopResult.dpRz;
                 //adjust maximum drainage
                 if (loopResult.drRz < 0)
                 {
@@ -613,15 +685,36 @@ namespace atbApi
                 {
                     //drainage exceeds taw -> adjust this day values to stay beyond this limit
                     loopResult.drRzExceeded = loopResult.drRz - tawRz;
-                    loopResult.drRzExceeded = loopResult.drRz - tawRz;
 
-                    var _eScale = loopResult.e / (loopResult.e + loopResult.tAct);
-                    var _tScale = loopResult.tAct / (loopResult.e + loopResult.tAct);
-                    loopResult.tAct = Math.Min(0, loopResult.tAct - loopResult.drRzExceeded * _tScale);
-                    loopResult.eAct = Math.Min(0, loopResult.e - loopResult.drRzExceeded * _eScale);
+                    if ((loopResult.eAct + loopResult.tAct) > 0.001)
+                    {
+                        var _eScale = loopResult.e / (loopResult.e + loopResult.tAct);
+                        var _tScale = loopResult.tAct / (loopResult.e + loopResult.tAct);
+                        loopResult.tAct = Math.Max(0, loopResult.tAct - loopResult.drRzExceeded * _tScale);
+                        loopResult.eAct = Math.Max(0, loopResult.e - loopResult.drRzExceeded * _eScale);
+                    }
+                    else {
+                        loopResult.tAct= 0;
+                        loopResult.eAct= 0;
+                    }
                     loopResult.drRz = args.lastConditions.drRz - loopResult.netPrecipitation + (loopResult.eAct + loopResult.tAct) + loopResult.dpRz;
                 }
 
+                loopResult.dpDz = Math.Max(0, loopResult.dpRz - args.lastConditions.drDz);
+                loopResult.drDz = args.lastConditions.drDz - loopResult.dpRz + loopResult.dpDz;
+
+                if (loopResult.drDz < 0)
+                {
+                    //negative drainage should not happen -> deep percolate excess water
+                    loopResult.dpDz -= loopResult.drDz;
+                    loopResult.drDz = 0;
+                }
+                if (loopResult.drDz > tawDz)
+                {
+                    //drainage exceeds taw should not happen in deep zone -> write exceed value to result table
+                    loopResult.drDzExceeded = loopResult.drDz - tawDz;
+                    loopResult.drDz = tawDz;
+                }
 
                 //calculate precipitation/irrigation efficiency
                 if ((climateSet.precipitation + loopResult.netIrrigation + loopResult.autoNetIrrigation) > 0)
@@ -629,7 +722,7 @@ namespace atbApi
                     loopResult.precIrrEff = (loopResult.netPrecipitation - loopResult.dpDz) / ((double)climateSet.precipitation + loopResult.netIrrigation + loopResult.autoNetIrrigation);
 
                     //calculate soil water storage efficiency
-                    if (Math.Round(args.lastConditions.drRz, 5) == 0.0)
+                    if (Math.Round(args.lastConditions.drRz, 5, MidpointRounding.AwayFromZero) == 0.0)
                     {
                         loopResult.soilStorageEff = 0.0;
                     }
@@ -647,14 +740,16 @@ namespace atbApi
                 args.lastConditions.zr = zr;
 
                 ETTools.CumulateResults(ref result, ref loopResult);
-
-                //buildBalance(result, lastConditions);
-                //buildYieldReduction();
-
             }//for loopDate
 
+            //reset yieldReduction from last (monthly) runs and build new sum
+            result.yieldReduction = 1;
+            foreach (PlantStage stage in result.ksMeanValues.Keys) {
+                result.yieldReduction *= 1 - result.yieldReductionValues[stage];
+            }
+            result.yieldReduction = 1 - result.yieldReduction;
             result.lastConditions = args.lastConditions;
-            result.runtimeMs = ((double)DateTime.Now.Ticks - (double)profileStart.Ticks) / 10000.0;
+            result.runtimeMs += stopWatch.Elapsed.TotalMilliseconds;
 
             return true;
         }

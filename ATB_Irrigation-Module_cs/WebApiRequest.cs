@@ -17,6 +17,7 @@ using System.Net;
 using System.Threading.Tasks;
 using System.IO;
 using System.Globalization;
+using Newtonsoft.Json.Linq;
 
 using atbApi;
 using atbApi.data;
@@ -108,7 +109,7 @@ namespace local
             }
         }
 
-        internal static async Task<Double> LoadBaseDataByIdFromATBWebService(String dataObjId)
+        internal static async Task<JObject> LoadBaseDataByIdFromATBWebService(String dataObjId)
         {
             try
             {
@@ -117,15 +118,12 @@ namespace local
                     dataObjId
                 );
                 Stream webResponse = await ExecuteWebApiRequest(url);
-                StreamReader altReader = new StreamReader(webResponse);
-                String altResult = altReader.ReadToEnd();
-                if (!altResult.Contains("result")) return 0;
-                altResult = altResult.Split(':')[1].Replace('}', ' ').Trim();
-                return Int32.Parse(altResult);
+                StreamReader responseReader = new StreamReader(webResponse);
+                return JObject.Parse(responseReader.ReadToEnd());
             }
             catch
             {
-                return 0;
+                return new JObject();
             }
         }
 

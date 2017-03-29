@@ -46,7 +46,7 @@ namespace atbApi
     public class Evaporation
     {
         //calculate evaporation
-        public static EvaporationResult ECalculation(
+        public static bool ECalculation(
             ref SoilConditions lastConditions,
             PlantValues plantSet,
             ClimateValues climateSet,
@@ -60,10 +60,11 @@ namespace atbApi
             double autoNetIrrigationTc,
             double interception,
             double interceptionIrr,
-            double interceptionAutoIrrTc
+            double interceptionAutoIrrTc,
+            ref EvaporationResult eResult
         )
         {
-            var result = new EvaporationResult();
+            if (eResult == null) eResult = new EvaporationResult();
             var rewFactor = 2.2926;
             var kcMax = 1.2;
             var kcMin = 0.0;
@@ -80,10 +81,10 @@ namespace atbApi
                 fc = Math.Pow(Math.Max((kcb - kcMin), 0.01) / (kcMax - kcMin), 1 + 0.5 * (double)plantSet.height);
                 fc = Math.Min(0.99, fc);
             }
-            result.kcMin = kcMin;
-            result.kcMax = kcMax;
-            result.kcb = kcb;
-            result.fc = fc;
+            eResult.kcMin = kcMin;
+            eResult.kcMax = kcMax;
+            eResult.kcb = kcb;
+            eResult.fc = fc;
 
             var few = Math.Min(1 - fc, Math.Min(irrigationFw, autoIrrigationFw));
             if ((netIrrigation > 0 || autoNetIrrigationTc > 0) && (irrigationType.name == "drip"))
@@ -91,10 +92,10 @@ namespace atbApi
                 few = Math.Min(1 - fc, (1 - (2 / 3) * fc) * Math.Min(irrigationFw, autoIrrigationFw));
             }
 
-            result.few = few;
-            result.tew = tew;
+            eResult.few = few;
+            eResult.tew = tew;
             var rew = tew / rewFactor;
-            result.rew = rew;
+            eResult.rew = rew;
             var kr = 1.0;
             if (lastConditions.de > rew)
             {
@@ -102,12 +103,12 @@ namespace atbApi
                 kr = Math.Max(0, kr);
             }
             if (rew == 0) kr = 0;
-            result.kr = kr;
+            eResult.kr = kr;
             var ke = Math.Min(kr * (kcMax - kcb), few * kcMax);
-            result.ke = ke;
+            eResult.ke = ke;
             var e = ke * et0;
             e = e * eFactor;
-            result.e = e;
+            eResult.e = e;
             var netPrecititationTc = (double)climateSet.precipitation - interception + netIrrigation - interceptionIrr + autoNetIrrigationTc - interceptionAutoIrrTc;
             var dpe = netPrecititationTc - lastConditions.de;
             dpe = Math.Max(0, dpe);
@@ -116,9 +117,9 @@ namespace atbApi
             de = Math.Min(tew, de);
             lastConditions.de = de;
             lastConditions.dpe = dpe;
-            result.de = de;
-            result.dpe = dpe;
-            return result;
+            eResult.de = de;
+            eResult.dpe = dpe;
+            return true;
         }
     }
 }

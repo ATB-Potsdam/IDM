@@ -274,12 +274,14 @@ namespace atbApi
                     ETArgs tmpArgs = MergeArgs(ref etArgs, cs);
                     tmpArgs.start = start;
                     tmpArgs.end = end;
-                    if (_results.ContainsKey(csIndex))
+                    if (_results.ContainsKey(csIndex)) tmpResult = _results[csIndex];
+
+                    if (tmpArgs.plant == null)
                     {
-                        tmpResult = _results[csIndex];
-                        tmpArgs.lastConditions = tmpResult.lastConditions;
-                        tmpResult.lastConditions = null;
+                        Debug.WriteLine("no plant for cropSequence: " + csIndex + " skipping sequence " + start.ToString());
+                        continue;
                     }
+
                     Transpiration.ETCalc(ref tmpArgs, ref tmpResult);
                     _results[csIndex] = tmpResult;
                 }
