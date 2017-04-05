@@ -13,6 +13,8 @@ using System.Globalization;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
+using System.Reflection;
+
 using local;
 
 namespace atbApi
@@ -62,6 +64,19 @@ namespace atbApi
                 this.zr = zr;
                 this.tawRz = tawRz;
                 this.tawDz = tawDz;
+            }
+
+            //clone constructor
+            public SoilConditions(SoilConditions soilConditions)
+            {
+                //use this for .net 4.0
+                //foreach (PropertyInfo pi in this.GetType().GetProperties())
+                //use this for .net 4.5
+                foreach (PropertyInfo pi in this.GetType().GetRuntimeProperties())
+                {
+                    if (soilConditions.GetType().GetRuntimeProperty(pi.Name) == null) continue;
+                    pi.SetValue(this, soilConditions.GetType().GetRuntimeProperty(pi.Name).GetValue(soilConditions, null), null);
+                }
             }
 
             public SoilConditions(Soil soil, double zr = 0.3, double depletionRz = 0.4, double depletionDz = 0.3, double depletionDe = 0.4)

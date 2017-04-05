@@ -11,6 +11,7 @@ using System;
 using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 
 using atbApi.data;
@@ -21,6 +22,7 @@ using atbApi.data;
  */
 namespace local
 {
+
     /*!
      * \brief   Singleton class for tools.
      *
@@ -51,6 +53,23 @@ namespace local
             dynamic a = num1;
             dynamic b = num2;
             return a + b;
+        }
+
+        internal static Dictionary<TKey, TValue> CloneDictionary<TKey, TValue>(Dictionary<TKey, TValue> src)
+        {
+            Dictionary<TKey, TValue> dst = new Dictionary<TKey, TValue>(src.Count, src.Comparer);
+
+            foreach (KeyValuePair<TKey, TValue> entry in src)
+            {
+                dst.Add(entry.Key, (TValue)entry.Value);
+            }
+            return dst;
+        }
+        
+        internal static T Clone<T>(T source)
+        {
+            var ser = JsonConvert.SerializeObject(source);
+            return JsonConvert.DeserializeObject<T>(ser);
         }
         
         internal static double Linear_day(int iterator, int startIterator, int endIterator, double startValue, double endValue)

@@ -38,15 +38,36 @@ namespace atbApi
             public Soil soil { get; set; }
             public Climate climate { get; set; }
             public IrrigationType irrigationType { get; set; }
+            public double area { get; set; }
 
             private static IDictionary<String, String> propertyMapper = new Dictionary<String, String>();
 
-            public void parseData(IDictionary<String, String> values, PlantDb pdb = null, SoilDb sdb = null, ClimateDb cdb = null)
+            public void parseData(IDictionary<String, String> values, CultureInfo cultureInfo = null, PlantDb pdb = null, SoilDb sdb = null, ClimateDb cdb = null)
             {
-                base.parseData(values, propertyMapper, pdb: pdb, sdb: sdb, cdb: cdb);
+                base.parseData(values, propertyMapper, cultureInfo: cultureInfo, pdb: pdb, sdb: sdb, cdb: cdb);
             }
         }
 
+        /*!
+         * \brief   Encapsulates the result of a transpiration or evapotranspiration calculation.
+         *
+         */
+
+        public class CropSequenceResult
+        {
+            /*! runtimeMs, unit: "ms", description: Actual runtime of this model in milliseconds. */
+            public double runtimeMs { get; set; }
+            /*! runtimeMs, unit: "none", description: If an error occured during the calculation, this value is not null and contains an error description. */
+            public String error { get; set; }
+            public IDictionary<String, double> networkIdIrrigationDemand { get; set; }
+
+            public CropSequenceResult()
+            {
+                networkIdIrrigationDemand = new Dictionary<String, double>();
+            }
+        }
+
+        
         /*!
          * \brief   Class to hold aggregated climate data for the calculation of a crop growing: The data must begin
          *          at seed date and must not end before harvest date. 
@@ -68,6 +89,7 @@ namespace atbApi
             private Exception _e;
             private DateTime? _start;
             private DateTime? _end;
+            private CultureInfo _cultureInfo = null;
 
             /*!
              * \brief   public readonly property to access the name
@@ -139,11 +161,12 @@ namespace atbApi
              * \param   step                incremental time step of the data
              */
 
-            public CropSequence(Stream cropSequenceFileStream, PlantDb plantDb, SoilDb soilDb, ClimateDb climateDb)
+            public CropSequence(Stream cropSequenceFileStream, PlantDb plantDb, SoilDb soilDb, ClimateDb climateDb, CultureInfo cultureInfo = null)
             {
                 _plantDb = plantDb;
                 _climateDb = climateDb;
                 _soilDb = soilDb;
+                _cultureInfo = cultureInfo;
                 loadCsv(cropSequenceFileStream);
             }
 
@@ -171,7 +194,7 @@ namespace atbApi
                         //catch parse exception and continue reading file
                         try
                         {
-                            values.parseData(fields, pdb: plantDb, sdb: soilDb, cdb: climateDb);
+                            values.parseData(fields, _cultureInfo == null ? CultureInfo.InvariantCulture : _cultureInfo, pdb: plantDb, sdb: soilDb, cdb: climateDb);
                         }
                         catch (Exception e)
                         {
@@ -263,27 +286,67 @@ namespace atbApi
                 return result;
             }
 
-            public IDictionary<String, ETResult> runCropSequence(DateTime start, DateTime end, TimeStep step, ref ETArgs etArgs)
+            public CropSequenceResult runCropSequence(DateTime start, DateTime end, TimeStep step, ref ETArgs etArgs, ref CropSequenceResult mbResult, bool dryRun = false)
             {
                 Stopwatch stopWatch = new Stopwatch();
                 stopWatch.Start();
+
+                CropSequenceResult localMbResult = new CropSequenceResult();
+                if (mbResult == null) mbResult = new CropSequenceResult();
+
                 foreach (CropSequenceValues cs in getCropSequence(start))
                 {
                     String csIndex = cs.networkId + cs.fieldId;
-                    ETResult tmpResult = null;
+
                     ETArgs tmpArgs = MergeArgs(ref etArgs, cs);
                     tmpArgs.start = start;
                     tmpArgs.end = end;
-                    if (_results.ContainsKey(csIndex)) tmpResult = _results[csIndex];
-
                     if (tmpArgs.plant == null)
                     {
-                        Debug.WriteLine("no plant for cropSequence: " + csIndex + " skipping sequence " + start.ToString());
+                        //Debug.WriteLine("no plant for cropSequence: " + csIndex + " skipping sequence " + start.ToString());
                         continue;
                     }
 
-                    Transpiration.ETCalc(ref tmpArgs, ref tmpResult);
-                    _results[csIndex] = tmpResult;
+                    ETResult tmpResult = null;
+                    if (_results.ContainsKey(csIndex)) tmpResult = _results[csIndex];
+
+                    if (dryRun)
+                    {
+                        if (tmpResult != null) {
+                            tmpResult = new ETResult(tmpResult);
+                            tmpResult.autoIrrigation = 0;
+                            tmpResult.autoNetIrrigation = 0;
+                            tmpResult.interceptionAutoIrr = 0;
+                        }
+                        Transpiration.ETCalc(ref tmpArgs, ref tmpResult, dryRun);
+                    }
+                    else
+                    {
+                        if (mbResult.networkIdIrrigationDemand.ContainsKey(csIndex))
+                        {
+                            Debug.WriteLine("found irrigation: " + csIndex + ": " + mbResult.networkIdIrrigationDemand[csIndex].ToString());
+                            //FIXME: convert irrigation to schedule and add to tmpArgs
+                            DateTime startMin = new DateTime(Math.Max(tmpArgs.seedDate.Ticks, tmpArgs.start != null ? ((DateTime)tmpArgs.start).Ticks : 0));
+                            DateTime endMax = new DateTime(Math.Min(tmpArgs.harvestDate.Ticks, tmpArgs.end != null ? ((DateTime)tmpArgs.end).Ticks : 0));
+                            TimeSpan scheduleLength = endMax.Subtract(startMin);
+                            DateTime scheduleMid = startMin.AddMinutes(scheduleLength.TotalMinutes / 2);
+                            if (tmpArgs.irrigationSchedule == null) tmpArgs.irrigationSchedule = new IrrigationSchedule(cs.irrigationType);
+                            tmpArgs.irrigationSchedule.schedule.Add(scheduleMid, mbResult.networkIdIrrigationDemand[csIndex]);
+                        }
+                        Transpiration.ETCalc(ref tmpArgs, ref tmpResult, dryRun);
+                        _results[csIndex] = tmpResult;
+                    }
+
+                    if (localMbResult.networkIdIrrigationDemand.ContainsKey(csIndex))
+                    {
+                        localMbResult.networkIdIrrigationDemand[csIndex] += tmpResult.autoNetIrrigation;
+                    }
+                    else
+                    {
+                        localMbResult.networkIdIrrigationDemand[csIndex] = tmpResult.autoNetIrrigation;
+                    }
+
+                    localMbResult.error += tmpResult.error;
                 }
                 stopWatch.Stop();
                 TimeSpan ts = stopWatch.Elapsed;
@@ -292,8 +355,9 @@ namespace atbApi
                 string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:000}",
                     ts.Hours, ts.Minutes, ts.Seconds,
                     ts.Milliseconds);
-                Debug.WriteLine("runCropSequence took " + elapsedTime); 
-                return results;
+                Debug.WriteLine("runCropSequence took " + elapsedTime);
+                localMbResult.runtimeMs = stopWatch.ElapsedMilliseconds;
+                return localMbResult;
             }
         }
     }

@@ -121,11 +121,29 @@ namespace atbApi
     }
 
     //calculated once at start, put into result as transient values
-    internal class TransientValues
+    public class TransientValues
     {
         public double tawRz { get; set; }
         public double tawDz { get; set; }
         public double tawMax { get; set; }
+
+        public TransientValues()
+        {
+        }
+
+        //clone constructor
+        public TransientValues(TransientValues tValues)
+        {
+            //use this for .net 4.0
+            //foreach (PropertyInfo pi in this.GetType().GetProperties())
+            //use this for .net 4.5
+            foreach (PropertyInfo pi in this.GetType().GetRuntimeProperties())
+            {
+                if (tValues.GetType().GetRuntimeProperty(pi.Name) == null) continue;
+
+                pi.SetValue(this, tValues.GetType().GetRuntimeProperty(pi.Name).GetValue(tValues, null), null);
+            }
+        }
     }
 
     /*!
@@ -235,6 +253,7 @@ namespace atbApi
             //use this for .net 4.5
             foreach (PropertyInfo pi in this.GetType().GetRuntimeProperties())
             {
+                if (etArgs.GetType().GetRuntimeProperty(pi.Name) == null) continue;
                 pi.SetValue(this, etArgs.GetType().GetRuntimeProperty(pi.Name).GetValue(etArgs, null), null);
             }
         }
@@ -308,7 +327,7 @@ namespace atbApi
         public IDictionary<PlantStage, double> yieldReductionValues { get; set; }
         /*! dailyValues, description: Each line contains values for one day from "seedDate" to "harvestDate". This includes input values, intermediate results, evaporation, transpiration, evapotranspiration and soil water balance. */
         public IDictionary<DateTime, ETDailyValues> dailyValues { get; set; }
-        internal TransientValues tValues { get; set; }
+        public TransientValues tValues { get; set; }
 
         public ETResult()
         {
@@ -318,6 +337,46 @@ namespace atbApi
             yieldReductionValues = new Dictionary<PlantStage, double>();
             irrigationFw = 1;
             autoIrrigationFw = 1;
+        }
+    
+        //clone constructor
+        public ETResult(ETResult etResult)
+        {
+            //use this for .net 4.0
+            //foreach (PropertyInfo pi in this.GetType().GetProperties())
+            //use this for .net 4.5
+            foreach (PropertyInfo pi in this.GetType().GetRuntimeProperties())
+            {
+                if (etResult.GetType().GetRuntimeProperty(pi.Name).GetValue(etResult, null) == null) continue;
+
+                if (pi.Name == "lastConditions")
+                {
+                    pi.SetValue(this, new SoilConditions((SoilConditions)etResult.GetType().GetRuntimeProperty(pi.Name).GetValue(etResult, null)), null);
+                }
+                else if (pi.Name == "irrigationSchedule")
+                {
+                    pi.SetValue(this, new IrrigationSchedule(((IrrigationSchedule)etResult.GetType().GetRuntimeProperty(pi.Name).GetValue(etResult, null)).type), null);
+                }
+                else if (pi.Name == "ksMeanValues")
+                {
+                    pi.SetValue(this, new Dictionary<PlantStage, MeanValue>(), null);
+                }
+                else if (pi.Name == "yieldReductionValues")
+                {
+                    pi.SetValue(this, new Dictionary<PlantStage, double>(), null);
+                }
+                else if (pi.Name == "dailyValues")
+                {
+                    pi.SetValue(this, new Dictionary<DateTime, ETDailyValues>(), null);
+                }
+                else if (pi.Name == "tValues")
+                {
+                    pi.SetValue(this, new TransientValues((TransientValues)etResult.GetType().GetRuntimeProperty(pi.Name).GetValue(etResult, null)), null);
+                }
+                else {
+                    pi.SetValue(this, etResult.GetType().GetRuntimeProperty(pi.Name).GetValue(etResult, null), null);
+                }
+            }
         }
     }
 
@@ -409,7 +468,9 @@ namespace atbApi
 
         public static bool ETCalc(
             ref ETArgs args,
-            ref ETResult result
+            ref ETResult result,
+            bool keepDailyValues = false,
+            bool dryRun = false
         )
         {
             Stopwatch stopWatch = new Stopwatch();
@@ -420,7 +481,7 @@ namespace atbApi
                 {
                     args.lastConditions = result.lastConditions;
                 }
-                return ETCalcLoop(ref args, ref result, stopWatch);
+                return ETCalcLoop(ref args, ref result, stopWatch, keepDailyValues, dryRun);
             }
 
             result = new ETResult();
@@ -450,17 +511,16 @@ namespace atbApi
             //adjust soil water balance for moved root zone
             args.lastConditions = SoilConditionTools.AdjustSoilConditionsZr(args.lastConditions, result.tValues.tawRz, result.tValues.tawDz, (double)plantSetStart.Zr, args.soil.maxDepth);
 
-            //stored in first loop
-            // result.drDiff = -(args.lastConditions.drRz + args.lastConditions.drDz);
-
-            return ETCalcLoop(ref args, ref result, stopWatch);
+            return ETCalcLoop(ref args, ref result, stopWatch, keepDailyValues, dryRun);
         }
 
 
         private static bool ETCalcLoop(
             ref ETArgs args,
             ref ETResult result,
-            Stopwatch stopWatch
+            Stopwatch stopWatch,
+            bool keepDailyValues = false,
+            bool dryRun = false
         )
         {
             var et0Result = new Et0Result();
@@ -471,7 +531,7 @@ namespace atbApi
                 if (plantDay == null) continue;
 
                 var loopResult = new ETDailyValues();
-                result.dailyValues.Add(loopDate, loopResult);
+                if (keepDailyValues) result.dailyValues.Add(loopDate, loopResult);
 
                 var climateSet = args.climate.getValues(loopDate);
                 if (climateSet == null)
@@ -540,16 +600,16 @@ namespace atbApi
                     )
                 ) autoIrrWindow = false;
 
-
+                var irrDeficit = 0.2;
                 if (args.autoIrr != null && autoIrrWindow && !plantSet.isFallow && tawRz != 0)
                 {
                     if (args.autoIrr.level == 0) {
-                        if (soilSaturation < 1 - loopResult.pAdj) {
+                        if (soilSaturation < 1 - loopResult.pAdj - irrDeficit) {
                             loopResult.autoIrrigation = args.autoIrr.amount;
                             loopResult.autoNetIrrigation = loopResult.autoIrrigation * args.autoIrr.type.fw;
                             if (args.autoIrr.amount == 0)
                             {
-                                loopResult.autoNetIrrigation = (1 - loopResult.pAdj - soilSaturation + args.autoIrr.cutoff) * tawRz - loopResult.netIrrigation;
+                                loopResult.autoNetIrrigation = (1 - loopResult.pAdj - irrDeficit - soilSaturation + args.autoIrr.cutoff) * tawRz - loopResult.netIrrigation;
                                 loopResult.autoIrrigation = loopResult.autoNetIrrigation / args.autoIrr.type.fw;
                             }
                         }

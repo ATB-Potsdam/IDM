@@ -206,34 +206,43 @@ Public Class Form1
 
     Private Sub Button9_Click(sender As Object, e As EventArgs) Handles Button9.Click
         'transpiration calc DHI
-        Dim cultureInfo As CultureInfo = New CultureInfo("de-DE")
+        Dim cultureInfoDe As CultureInfo = New CultureInfo("de-DE")
+        Dim cultureInfoEn As CultureInfo = New CultureInfo("en-US")
         Dim climateDb As atbApi.data.ClimateDb = New atbApi.data.ClimateDb()
-        For i = 1 To 6
-            Dim climateFile = "..\..\..\testdata\climate.uea_cru_public.date-1900-01-01T00-00-00.000Z_clean_" & i & ".csv"
+        For i = 0 To 5
+            'Dim climateFile = "..\..\..\testdata\climate.uea_cru_public.date-1900-01-01T00-00-00.000Z_clean_" & i & ".csv"
+            Dim climateFile = "..\..\..\testdata\UEA_CRU-ClimateData_" & i & ".csv"
             Dim climateStream As FileStream = File.OpenRead(climateFile)
-            climateDb.addClimate(climateStream, atbApi.data.TimeStep.month, cultureInfo)
+            climateDb.addClimate(climateStream, atbApi.data.TimeStep.month, cultureInfoEn)
         Next
 
-        Dim cSFile = "..\..\..\testdata\DHI_Field_IWRM_cropSequences_example_Updated.csv"
+        'Dim cSFile = "..\..\..\testdata\DHI_Field_IWRM_cropSequences_example_Updated.csv"
+        Dim cSFile = "..\..\..\testdata\DHI_Field_IWRM_cropSequences_example_Updated_Vgl_hj.csv"
         Dim cSStream As FileStream = File.OpenRead(cSFile)
         Dim cS As atbApi.data.CropSequence = _
-            New atbApi.data.CropSequence(cSStream, atbApi.data.LocalPlantDb.Instance, atbApi.data.LocalSoilDb.Instance, climateDb)
+            New atbApi.data.CropSequence(cSStream, atbApi.data.LocalPlantDb.Instance, atbApi.data.LocalSoilDb.Instance, climateDb, cultureInfoDe)
 
 
-        Dim loopDate As DateTime = New DateTime(2001, 1, 1, 0, 0, 0, DateTimeKind.Utc)
-        Dim loopEnd As DateTime = New DateTime(2010, 12, 31, 0, 0, 0, DateTimeKind.Utc)
+        Dim loopDate As DateTime = New DateTime(1901, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+        Dim loopEnd As DateTime = New DateTime(2900, 12, 31, 0, 0, 0, DateTimeKind.Utc)
         Dim etArgs As New atbApi.ETArgs()
         etArgs.autoIrr = New atbApi.data.AutoIrrigationControl(level:=0, cutoff:=0.1)
-        Dim result As Dictionary(Of String, atbApi.ETResult)
+        Dim result As atbApi.data.CropSequenceResult
 
         Do
+
             Dim endDate As DateTime = New DateTime(loopDate.Year, loopDate.Month, DateTime.DaysInMonth(loopDate.Year, loopDate.Month), 0, 0, 0, loopDate.Kind)
-            result = cS.runCropSequence(start:=loopDate, end:=endDate, step:=atbApi.data.TimeStep.day, etArgs:=etArgs)
+            result = cS.runCropSequence(start:=loopDate, end:=endDate, step:=atbApi.data.TimeStep.day, etArgs:=etArgs, mbResult:=Nothing, dryRun:=True)
+            Dim resultKeys As List(Of String) = New List(Of String)(result.networkIdIrrigationDemand.Keys)
+            For Each resultKey In resultKeys
+                result.networkIdIrrigationDemand(resultKey) /= 2
+            Next
+            result = cS.runCropSequence(start:=loopDate, end:=endDate, step:=atbApi.data.TimeStep.day, etArgs:=etArgs, mbResult:=result, dryRun:=False)
             loopDate = loopDate.AddMonths(1)
         Loop While loopDate < loopEnd
 
-        For Each item In result
-            TextBox1.AppendText(item.Key + ": autoNetIrr: " + item.Value.autoNetIrrigation.ToString() + " tAct: " + item.Value.tAct.ToString() + vbNewLine)
+        For Each item In result.networkIdIrrigationDemand
+            TextBox1.AppendText(item.Key + ": autoNetIrr: " + item.Value.ToString() + vbNewLine)
         Next
     End Sub
 End Class

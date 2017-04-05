@@ -13,6 +13,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Globalization;
 using System.IO;
+using System.Reflection;
+
 
 using local;
 
@@ -68,7 +70,7 @@ namespace atbApi
 
             private static IDictionary<String, String> propertyMapper = new Dictionary<String, String>();
 
-            static ClimateValues()
+            public ClimateValues()
             {
                 // renamed property in Sponge-JS export tool
                 // propertyMapper.Add("xxx", "name");
@@ -77,6 +79,19 @@ namespace atbApi
             public new void parseData(IDictionary<String, String> values, CultureInfo cultureInfo = null)
             {
                 base.parseData(values, propertyMapper, cultureInfo: cultureInfo);
+            }
+
+            //clone constructor
+            public ClimateValues(ClimateValues climateValues)
+            {
+                //use this for .net 4.0
+                //foreach (PropertyInfo pi in this.GetType().GetProperties())
+                //use this for .net 4.5
+                foreach (PropertyInfo pi in this.GetType().GetRuntimeProperties())
+                {
+                    if (climateValues.GetType().GetRuntimeProperty(pi.Name) == null) continue;
+                    pi.SetValue(this, climateValues.GetType().GetRuntimeProperty(pi.Name).GetValue(climateValues, null), null);
+                }
             }
         }
 
@@ -311,6 +326,19 @@ namespace atbApi
                 _cultureInfo = cultureInfo;
             }
 
+            private ClimateValues convertTimeStep(ClimateValues climateSet, DateTime adjustedDate, TimeStep nativeStep, TimeStep requestedStep)
+            {
+                if (!(nativeStep == TimeStep.month && requestedStep == TimeStep.day))
+                    throw new NotImplementedException();
+                int daysInMonth = DateTime.DaysInMonth(adjustedDate.Year, adjustedDate.Month);
+                var resultSet = new ClimateValues(climateSet);
+                resultSet.precipitation /= daysInMonth;
+                resultSet.sunshine_duration /= daysInMonth;
+                resultSet.Rs /= daysInMonth;
+                resultSet.et0 /= daysInMonth;
+                return resultSet;
+            }
+
             private int loadCsv(Stream stream)
             {
                 try
@@ -338,7 +366,14 @@ namespace atbApi
 
                         if (!fields.ContainsKey("_iterator.date")) continue;
                         DateTime _iterator = DateTime.Parse(fields["_iterator.date"], _cultureInfo == null ? CultureInfo.InvariantCulture : _cultureInfo);
-                        addValues(_iterator, values);
+                        if (_step != TimeStep.day)
+                        {
+                            addValues(_iterator, convertTimeStep(values, Tools.AdjustTimeStep(_iterator, this.step), this.step, TimeStep.day));
+                        }
+                        else
+                        {
+                            addValues(_iterator, values);
+                        }
                     }
                     return climateData.Count;
                 }
@@ -449,7 +484,9 @@ namespace atbApi
                 if (climateData == null) return null;
 
                 ClimateValues resultSet;
-                climateData.TryGetValue(Tools.AdjustTimeStep(date, step), out resultSet);
+                DateTime adjustedDate = Tools.AdjustTimeStep(date, this.step);
+                climateData.TryGetValue(adjustedDate, out resultSet);
+
                 return resultSet;
             }
         }
