@@ -120,18 +120,36 @@ namespace atbApi
         }
     }
 
-    //calculated once at start, put into result as transient values
+    /*!
+     * \brief   class to hold transient values needed for every transpiration calculation
+     *          calculated once at start, put into result as transient values.
+     *
+     */
+
     public class TransientValues
     {
+        /*! tawRz, unit: "mm", description: Totally available water in root zone. */
         public double tawRz { get; set; }
+        /*! tawDz, unit: "mm", description: Totally available water in deep zone. */
         public double tawDz { get; set; }
+        /*! tawMax, unit: "mm", description: Totally available water for maximum soil depth. */
         public double tawMax { get; set; }
+
+        /*!
+         * Default constructor
+         *
+         */
 
         public TransientValues()
         {
         }
 
-        //clone constructor
+        /*!
+         * Clone Constructor
+         *
+         * \param   tValues The instance to clone
+         */
+
         public TransientValues(TransientValues tValues)
         {
             //use this for .net 4.0
@@ -269,9 +287,9 @@ namespace atbApi
     {
         /*! runtimeMs, unit: "ms", description: Actual runtime of this model in milliseconds. */
         public double runtimeMs { get; set; }
-        /*! runtimeMs, unit: "none", description: If an error occured during the calculation, this value is not null and contains an error description. */
+        /*! error, unit: "none", description: If an error occured during the calculation, this value is not null and contains an error description. Errors are cumulated in this string.*/
         public String error { get; set; }
-        /*! management, unit: "none", description: Dataset with irrigation events. */
+        /*! irrigationSchedule, unit: "none", description: Dataset with irrigation events. */
         public IrrigationSchedule irrigationSchedule { get; set; }
         /*! lastConditions, unit: "none", description: Soil water balance at end of calculation for root zone and deep zone for both calculation approaches E plus T and ET. */
         public SoilConditions lastConditions { get; set; }
@@ -285,7 +303,7 @@ namespace atbApi
         public double t { get; set; }
         /*! tAct[mm], unit: "mm", description: Sum of actual Transpiration for calculation period. */
         public double tAct { get; set; }
-        /*! etc[mm], unit: "mm", description: Sum of Evapotranspiration and transpiration for calculation period. */
+        /*! eActPlusTact[mm], unit: "mm", description: Sum of Evapotranspiration and transpiration for calculation period. */
         public double eActPlusTact { get; set; }
         /*! precipitation[mm], unit: "mm", description: Precipitation sum for calculation period. */
         public double precipitation { get; set; }
@@ -299,35 +317,35 @@ namespace atbApi
         public double netIrrigation { get; set; }
         /*! interceptionIrr[mm], unit: "mm", description: Additional interception for the irrigated water. */
         public double interceptionIrr { get; set; }
-        /*! dpRzTc[mm], unit: "mm", description: Deep percolation from root zone for dual calculation E plus T. This amount of water percolates from the root to the deep zone. */
+        /*! dpRz[mm], unit: "mm", description: Deep percolation from root zone for dual calculation E plus T. This amount of water percolates from the root to the deep zone. */
         public double dpRz { get; set; }
-        /*! dpDzTc[mm], unit: "mm", description: Deep percolation from deep zone for dual calculation E plus T. This amount of water percolates from the deep zone to ground water. */
+        /*! dpDz[mm], unit: "mm", description: Deep percolation from deep zone for dual calculation E plus T. This amount of water percolates from the deep zone to ground water. */
         public double dpDz { get; set; }
-        /*! drDiffTc[mm], unit: "mm", description: Soil drainage difference between "initialConditions" and "lastConditions". If positive, the soil is more drained and this amount of water was additional available for the plant. If negative, the soil is more saturated. */
+        /*! drDiff[mm], unit: "mm", description: Soil drainage difference between "initialConditions" and "lastConditions". If positive, the soil is more drained and this amount of water was additional available for the plant. If negative, the soil is more saturated. */
         public double drDiff { get; set; }
         /*! autoIrrigationFw, unit: "none", description: Fraction of wetted surface, depending on irrigation method this value is usually between 0.3 for drip irrigation and 1 for sprinkler. */
         public double autoIrrigationFw { get; set; }
-        /*! autoIrrigationTc[mm], unit: "mm", description: Sum of calculated irrigation demand for E plus T calculation. Fraction of wetted surface is not considered. */
+        /*! autoIrrigation[mm], unit: "mm", description: Sum of calculated irrigation demand for E plus T calculation. Fraction of wetted surface is not considered. */
         public double autoIrrigation { get; set; }
-        /*! autoNetIrrigationTc[mm], unit: "mm", description: Sum of calculated irrigation demand for E plus T calculation. Depending on irrigation type and fraction of wetted surface, the netto amount for the whole area may be lower lower than applied irrigation water. */
+        /*! autoNetIrrigation[mm], unit: "mm", description: Sum of calculated irrigation demand for E plus T calculation. Depending on irrigation type and fraction of wetted surface, the netto amount for the whole area may be lower lower than applied irrigation water. */
         public double autoNetIrrigation { get; set; }
-        /*! interceptionAutoIrrTc[mm], unit: "mm", description: Additional interception for the automated irrigated water. */
+        /*! interceptionAutoIrr[mm], unit: "mm", description: Additional interception for the automated irrigated water. */
         public double interceptionAutoIrr { get; set; }
-        /*! ksMeanTcInitial, unit: "none", description: Mean value for water stress factor "Ks" in initial stage of plant growing for E plus T calculation. */
-        /*! ksMeanTcDevelopment, unit: "none", description: Mean value for water stress factor "Ks" in development stage of plant growing for E plus T calculation. */
-        /*! ksMeanTcMid_season, unit: "none", description: Mean value for water stress factor "Ks" in mid-season stage of plant growing for E plus T calculation. */
-        /*! ksMeanTcLate_season, unit: "none", description: Mean value for water stress factor "Ks" in late-season stage of plant growing for E plus T calculation. */
+        /*! ksMeanValues, unit: "none", description: Mean values for water stress factor "Ks" for all stages of plant growing for E plus T calculation. */
         public IDictionary<PlantStage, MeanValue> ksMeanValues { get; set; }
-        /*! yieldReductionTc, unit: "none", description: Yield reduction factor due to water stress in initial stage of plant growing for E plus T calculation. */
+        /*! yieldReduction, unit: "none", description: Total yield reduction due to water stress for the whole plant growing period. */
         public double yieldReduction { get; set; }
-        /*! yieldReductionTcInitial, unit: "none", description: Yield reduction factor due to water stress in initial stage of plant growing for E plus T calculation. */
-        /*! yieldReductionTcDevelopment, unit: "none", description: Yield reduction factor due to water stress in development stage of plant growing for E plus T calculation. */
-        /*! yieldReductionTcMid_season, unit: "none", description: Yield reduction factor due to water stress in mid_season stage of plant growing for E plus T calculation. */
-        /*! yieldReductionTcLate_season, unit: "none", description: Yield reduction factor due to water stress in late_season stage of plant growing for E plus T calculation. */
+        /*! yieldReductionValues, unit: "none", description: Yield reduction factor due to water for all stages of plant growing for E plus T calculation. */
         public IDictionary<PlantStage, double> yieldReductionValues { get; set; }
         /*! dailyValues, description: Each line contains values for one day from "seedDate" to "harvestDate". This includes input values, intermediate results, evaporation, transpiration, evapotranspiration and soil water balance. */
         public IDictionary<DateTime, ETDailyValues> dailyValues { get; set; }
+        /*! tValues, unit: "none", description: Values calculated once and available for following calculations. */
         public TransientValues tValues { get; set; }
+
+        /*!
+         * \brief   Default constructor.
+         *
+         */
 
         public ETResult()
         {
@@ -455,15 +473,19 @@ namespace atbApi
 
     public static class Transpiration
     {
-
         /*!
          * Transpiration calculation.
          *
          * \author  Hunstock
          * \date    29.10.2015
          *
-         * \param [in,out]  args        Arguments.
-         * \param [in,out]  result      The result.
+         * \param [in,out]  args    Arguments.
+         * \param [in,out]  result  The result.
+         * \param   keepDailyValues true to keep daily values as part of the result
+         *                          consumes a lot of memory for larger calculations.
+         * \param   dryRun          true to dry run.
+         *
+         * \return  true if it succeeds, false if it fails.
          */
 
         public static bool ETCalc(

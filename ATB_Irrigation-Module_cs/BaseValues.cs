@@ -23,7 +23,7 @@ namespace atbApi
     namespace data
     {
         /*!
-         * \brief   The base values class, base class for plant- and soil data. Provides useful functions to parse csv data.
+         * \brief   The base values class, base class for climate, cropSequence plant and soil data. Provides useful functions to parse csv data.
          *
          */
 
