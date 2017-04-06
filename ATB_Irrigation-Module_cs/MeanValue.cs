@@ -1,23 +1,57 @@
-﻿namespace local
+﻿/*!
+ * \file    MeanValue.cs
+ *
+ * \brief   Implements a mean value to simply collect values and access the mean as a property.
+ *
+ * \author  Hunstock
+ * \date    06.03.2017
+ */
+
+namespace atbApi
 {
-    public class MeanValue
+
+    /*! 
+     * \brief   namespace for public available classes and structures
+     * 
+     */
+    namespace tools
     {
-        private int num = 0;
-        private double sum = 0;
+        /*!
+         * \brief   A mean value class.
+         *
+         */
 
-        public double value
+        public class MeanValue
         {
-            get
+            private int num = 0;
+            private double sum = 0;
+
+            /*!
+             * \brief   Gets the value.
+             *
+             * \return  The mean value.
+             */
+
+            public double value
             {
-                if (num == 0) return 0;
-                return sum / num;
+                get
+                {
+                    if (num == 0) return 0;
+                    return sum / num;
+                }
             }
-        }
 
-        public void Add(double value)
-        {
-            sum += value;
-            num++;
+            /*!
+             * \brief   Adds a value to the mean.
+             *
+             * \param   value   The value to add.
+             */
+
+            public void Add(double value)
+            {
+                sum += value;
+                num++;
+            }
         }
     }
 }

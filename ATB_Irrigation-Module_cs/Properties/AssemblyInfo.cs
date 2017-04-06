@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Globalization;
 
-using version;
+using atbApi.version;
 
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information

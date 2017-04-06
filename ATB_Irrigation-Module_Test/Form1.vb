@@ -218,19 +218,17 @@ Public Class Form1
             climateDb.addClimate(climateStream, atbApi.data.TimeStep.month, cultureInfoEn)
         Next
 
-        'create CultureInfo for german formatted csv data
-        Dim cultureInfoDe As CultureInfo = New CultureInfo("de-DE")
         'example cropSequence 1000 years from 1901 to 2900
         Dim cSFile = "..\..\..\testdata\DHI_Field_IWRM_cropSequences_example_Updated_Vgl_hj.csv"
         Dim cSStream As FileStream = File.OpenRead(cSFile)
         'create cropSequence, use builtin plant and soil db and before created climate db
         Dim cS As atbApi.data.CropSequence = _
-            New atbApi.data.CropSequence(cSStream, atbApi.data.LocalPlantDb.Instance, atbApi.data.LocalSoilDb.Instance, climateDb, cultureInfoDe)
+            New atbApi.data.CropSequence(cSStream, atbApi.data.LocalPlantDb.Instance, atbApi.data.LocalSoilDb.Instance, climateDb, cultureInfoEn)
 
         'common arguments for all calculations
         Dim etArgs As New atbApi.ETArgs()
         'create autoIrrigation parameters
-        etArgs.autoIrr = New atbApi.data.AutoIrrigationControl(level:=0, cutoff:=0.1)
+        etArgs.autoIrr = New atbApi.data.AutoIrrigationControl(level:=0, cutoff:=0.15, deficit:=0.2)
         'loop over 1000 years
         Dim loopDate As DateTime = New DateTime(1901, 1, 1, 0, 0, 0, DateTimeKind.Utc)
         Dim loopEnd As DateTime = New DateTime(2900, 12, 31, 0, 0, 0, DateTimeKind.Utc)
@@ -240,14 +238,14 @@ Public Class Form1
             'set endDate of one loop to last day of month
             Dim endDate As DateTime = New DateTime(loopDate.Year, loopDate.Month, DateTime.DaysInMonth(loopDate.Year, loopDate.Month), 0, 0, 0, loopDate.Kind)
             'calculate irrigation demand and don't cumulate results and plant development -> dryRun:=True
-            result = cS.runCropSequence(start:=loopDate, end:=endDate, step:=atbApi.data.TimeStep.day, etArgs:=etArgs, mbResult:=Nothing, dryRun:=True)
+            result = cS.runCropSequence(start:=loopDate, end:=endDate, etArgs:=etArgs, irrigationAmount:=Nothing, dryRun:=True)
             'modify irrigation demand, here just divide by 2 as an example
             Dim resultKeys As List(Of String) = New List(Of String)(result.networkIdIrrigationDemand.Keys)
             For Each resultKey In resultKeys
                 result.networkIdIrrigationDemand(resultKey) /= 2
             Next
             'calculate again with real irrigation amount -> mbResult:=result, dryRun:=False
-            result = cS.runCropSequence(start:=loopDate, end:=endDate, step:=atbApi.data.TimeStep.day, etArgs:=etArgs, mbResult:=result, dryRun:=False)
+            result = cS.runCropSequence(start:=loopDate, end:=endDate, etArgs:=etArgs, irrigationAmount:=result, dryRun:=False)
             'calculate next timestep
             loopDate = loopDate.AddMonths(1)
         Loop While loopDate < loopEnd

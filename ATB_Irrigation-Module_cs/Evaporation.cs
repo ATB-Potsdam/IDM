@@ -1,4 +1,13 @@
-﻿using System;
+﻿/*!
+ * \file    Evaporation.cs
+ *
+ * \brief   Implements the models for the calculation of evaporation as described in FAO paper 56.
+ *         
+ * \author  Hunstock
+ * \date    15.08.2015
+ */
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,41 +20,67 @@ using local;
 namespace atbApi
 {
     /*!
-     * \brief   Encapsulates the result of an E calculation.
+     * \brief   Encapsulates the result of an evaporation calculation.
      *
      */
 
     public class EvaporationResult
     {
-        /*! , unit: "none", description: crop coefficient minimal value */
+        /*! kcMin, unit: "none", description: crop coefficient minimal value */
         public double kcMin { get; set; }
-        /*! , unit: "none", description: crop coefficient maximal value */
+        /*! kcMax, unit: "none", description: crop coefficient maximal value */
         public double kcMax { get; set; }
-        /*! , unit: "none", description: basal crop coefficient */
+        /*! kcb, unit: "none", description: basal crop coefficient */
         public double kcb { get; set; }
-        /*! , unit: "none", description: fraction of soil surface covered by vegetation */
+        /*! fc, unit: "none", description: fraction of soil surface covered by vegetation */
         public double fc { get; set; }
-        /*! , unit: "none", description: fraction of soil that is exposed and wetted in the event */
+        /*! few, unit: "none", description: fraction of soil that is exposed and wetted in the event */
         public double few { get; set; }
-        /*! , unit: "mm", description: totally evaporable water */
+        /*! tew, unit: "mm", description: totally evaporable water */
         public double tew { get; set; }
-        /*! , unit: "mm", description: readily evaporable water */
+        /*! rew, unit: "mm", description: readily evaporable water */
         public double rew { get; set; }
-        /*! , unit: "none", description: evaporation reduction coefficient */
+        /*! kr, unit: "none", description: evaporation reduction coefficient */
         public double kr { get; set; }
-        /*! , unit: "mm", description: soil evaporation coefficient */
+        /*! ke, unit: "mm", description: soil evaporation coefficient */
         public double ke { get; set; }
-        /*! , unit: "mm", description: drainage in evaporation layer */
+        /*! de, unit: "mm", description: drainage in evaporation layer */
         public double de { get; set; }
-        /*! , unit: "mm", description: percolation from evaporation layer to deeper soil layers */
+        /*! dpe, unit: "mm", description: percolation from evaporation layer to deeper soil layers */
         public double dpe { get; set; }
-        /*! , unit: "mm", description: Calculated E value. */
+        /*! e, unit: "mm", description: Calculated evaporation value. */
         public double e { get; set; }
     }
 
-    public class Evaporation
+    /*!
+     * \brief   static class that holds all static functions for the evaporation calculation.
+     *
+     */
+
+    public static class Evaporation
     {
-        //calculate evaporation
+        /*!
+         * \brief   calculate evaporation.
+         *
+         * \param [in,out]  lastConditions  The last soil conditions.
+         * \param   plantSet                Set the plant values.
+         * \param   climateSet              Set the climate values.
+         * \param   irrigationType          Type of the irrigation.
+         * \param   et0                     The reference evapotranspiration.
+         * \param   eFactor                 The factor e is reduced by. May be used to consider mulching etc.
+         * \param   tew                     The totally evaporable water.
+         * \param   irrigationFw            The fraction of wetted surface depending on irrigation type.
+         * \param   autoIrrigationFw        The fraction of wetted surface depending on automatic irrigation type.
+         * \param   netIrrigation           The netto irrigation.
+         * \param   autoNetIrrigation       The automatic netto irrigation.
+         * \param   interception            The interception.
+         * \param   interceptionIrr         The interception of the irrigated water.
+         * \param   interceptionAutoIrr     The interception of the automatic irrigated water.
+         * \param [in,out]  eResult         The result of the calculation.
+         *
+         * \return  true if it succeeds, false if it fails.
+         */
+
         public static bool ECalculation(
             ref SoilConditions lastConditions,
             PlantValues plantSet,
@@ -57,10 +92,10 @@ namespace atbApi
             double irrigationFw,
             double autoIrrigationFw,
             double netIrrigation,
-            double autoNetIrrigationTc,
+            double autoNetIrrigation,
             double interception,
             double interceptionIrr,
-            double interceptionAutoIrrTc,
+            double interceptionAutoIrr,
             ref EvaporationResult eResult
         )
         {
@@ -87,7 +122,7 @@ namespace atbApi
             eResult.fc = fc;
 
             var few = Math.Min(1 - fc, Math.Min(irrigationFw, autoIrrigationFw));
-            if ((netIrrigation > 0 || autoNetIrrigationTc > 0) && (irrigationType.name == "drip"))
+            if ((netIrrigation > 0 || autoNetIrrigation > 0) && (irrigationType.name == "drip"))
             {
                 few = Math.Min(1 - fc, (1 - (2 / 3) * fc) * Math.Min(irrigationFw, autoIrrigationFw));
             }
@@ -109,7 +144,7 @@ namespace atbApi
             var e = ke * et0;
             e = e * eFactor;
             eResult.e = e;
-            var netPrecititationTc = (double)climateSet.precipitation - interception + netIrrigation - interceptionIrr + autoNetIrrigationTc - interceptionAutoIrrTc;
+            var netPrecititationTc = (double)climateSet.precipitation - interception + netIrrigation - interceptionIrr + autoNetIrrigation - interceptionAutoIrr;
             var dpe = netPrecititationTc - lastConditions.de;
             dpe = Math.Max(0, dpe);
             var de = lastConditions.de - netPrecititationTc + e / few + dpe;

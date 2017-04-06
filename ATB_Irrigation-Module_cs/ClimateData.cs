@@ -15,8 +15,8 @@ using System.Globalization;
 using System.IO;
 using System.Reflection;
 
-
 using local;
+using atbApi.tools;
 
 namespace atbApi
 {
@@ -70,18 +70,36 @@ namespace atbApi
 
             private static IDictionary<String, String> propertyMapper = new Dictionary<String, String>();
 
+            /*!
+             * \brief   Default constructor.
+             *
+             */
+
             public ClimateValues()
             {
                 // renamed property in Sponge-JS export tool
                 // propertyMapper.Add("xxx", "name");
             }
 
-            public new void parseData(IDictionary<String, String> values, CultureInfo cultureInfo = null)
+            /*!
+             * \brief   Parse data, iterates through all properties with getter and setter and tries to set with
+             * values.
+             *
+             * \param   values      The values.
+             * \param   cultureInfo Information to parse data in different localized formats
+             */
+
+            new public void parseData(IDictionary<String, String> values, CultureInfo cultureInfo = null)
             {
                 base.parseData(values, propertyMapper, cultureInfo: cultureInfo);
             }
 
-            //clone constructor
+            /*!
+             * \brief   Clone Constructor.
+             *
+             * \param   climateValues   The original climate values to clone.
+             */
+
             public ClimateValues(ClimateValues climateValues)
             {
                 //use this for .net 4.0
@@ -143,14 +161,14 @@ namespace atbApi
             }
 
             /*!
-             * \brief   Gets a climate.
+             * \brief   Gets climate data from the ATB webservice API.
              *
              * \param   name    The name.
              * \param   start   The start Date/Time.
              * \param   end     The end Date/Time.
              * \param   step    requested time step
              *
-             * \return  The climate.
+             * \return  The climate class filled with data.
              */
 
             public static async Task<Climate> getClimate(String name, DateTime start, DateTime end, TimeStep step)
@@ -163,35 +181,62 @@ namespace atbApi
             }
         }
 
+        /*!
+         * \brief   A climate database.
+         *          This class holds several climate objects to be used in conjunction with a cropSequence.
+         *          Each climate is stored and accessed by name in the database.
+         *
+         */
+
         public class ClimateDb
         {
             private IDictionary<String, Climate> climates = new Dictionary<String, Climate>();
 
             /*!
-             * \brief   Constructor to load external csv-File as soil database.
+             * \brief   Default constructor.
              *
-             * \param   soilDbFileStream   A file stream to read csv data from.
-             *
-             * \code{.unparsed}
-             * 'create filestream for csv data file
-             * Dim fs As System.IO.FileStream = New IO.FileStream("C:\DHI\MIKE-Basin_SoilData.csv", IO.FileMode.Open)
-             * 'create new soilDb
-             * Dim soilDb As atbApi.data.SoilDb = New atbApi.data.SoilDb(fs)
-             * 'important: close fileStream after SoilDb is created
-             * fs.Close()
-             * 'create new soil and provide your own soilDb to constructor
-             * Dim mySoil As atbApi.data.Soil = New atbApi.data.Soil("soilname_from_csv_data", soilDb)
-             * \endcode
              */
 
             public ClimateDb()
             {
             }
 
+            /*!
+             * \brief   Gets a climate from the database.
+             *
+             * \param   name    The name of the climate in the database.
+             *
+             * \return  The climate class with all available data.
+             */
+
             internal Climate getClimate(String name)
             {
                 return climates.ContainsKey(name) ? climates[name] : null;
             }
+
+            /*!
+             * \brief   Function to load external csv-File as new climate into the database.
+             *
+             * \param   climateFileStream   A file stream to read csv data from.
+             * \param   step                Data in csv-file is organized in this timestep.
+             * \param   cultureInfo         Information describing the culture.
+             *
+             * \remarks The following code example reads 6 different csv files into the database.
+             *
+             * \code{.unparsed}
+             * 'create CultureInfo for english formatted csv data
+             * Dim cultureInfoEn As CultureInfo = New CultureInfo("en-US")
+             * 'create empty climateDb
+             * Dim climateDb As atbApi.data.ClimateDb = New atbApi.data.ClimateDb()
+             * 'load 6 climate stations which are referenced in the cropSequence
+             * For i = 0 To 5
+             *     Dim climateFile = "..\..\..\testdata\UEA_CRU-ClimateData_" & i & ".csv"
+             *     Dim climateStream As FileStream = File.OpenRead(climateFile)
+             *     'load climate data from file into ram, TimeStep is required to convert monthly sums to daily values
+             *     climateDb.addClimate(climateStream, atbApi.data.TimeStep.month, cultureInfoEn)
+             * Next
+             * \endcode
+             */
 
             public void addClimate(Stream climateFileStream, TimeStep step, CultureInfo cultureInfo = null)
             {
@@ -200,9 +245,9 @@ namespace atbApi
             }
 
             /*!
-             * \brief   Get all soil names.
+             * \brief   Get all climate names.
              *
-             * \return  All soil names in database as unsorted list.
+             * \return  All climate names in database as unsorted list.
              */
 
             public ICollection<String> getClimateNames()

@@ -40,11 +40,11 @@ using System.Linq;
 using System.Text;
 using System.Diagnostics;
 using System.Reflection;
-
-using atbApi;
-using atbApi.data;
-using local;
 using System.Threading.Tasks;
+
+using local;
+using atbApi.data;
+using atbApi.tools;
 
 /*! 
  * \brief   namespace for all exported classes and structures
@@ -145,7 +145,7 @@ namespace atbApi
         }
 
         /*!
-         * Clone Constructor
+         * \brief   Clone Constructor
          *
          * \param   tValues The instance to clone
          */
@@ -263,7 +263,12 @@ namespace atbApi
             a = 0.25;
         }
 
-        //clone constructor
+        /*!
+         * \brief   clone constructor.
+         *
+         * \param   etArgs  The et arguments to clone.
+         */
+
         public ETArgs(ETArgs etArgs)
         {
             //use this for .net 4.0
@@ -279,7 +284,7 @@ namespace atbApi
 
 
     /*!
-     * \brief   Encapsulates the result of a transpiration or evapotranspiration calculation.
+     * \brief   Encapsulates the result of a transpiration and evaporation calculation.
      *
      */
 
@@ -356,8 +361,13 @@ namespace atbApi
             irrigationFw = 1;
             autoIrrigationFw = 1;
         }
-    
-        //clone constructor
+
+        /*!
+         * \brief   clone constructor.
+         *
+         * \param   etResult    The et result to clone.
+         */
+
         public ETResult(ETResult etResult)
         {
             //use this for .net 4.0

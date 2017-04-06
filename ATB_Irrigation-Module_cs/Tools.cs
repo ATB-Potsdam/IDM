@@ -24,12 +24,13 @@ namespace local
 {
 
     /*!
-     * \brief   Singleton class for tools.
+     * \brief   Static class for tools.
      *
      */
 
     internal static class Tools
     {
+        /*! List of types of the numerics in c#. */
         internal static readonly Type[] NumericTypes = new[]
         {
             typeof(int), typeof(double), typeof(decimal),
@@ -37,6 +38,14 @@ namespace local
             typeof(byte), typeof(ulong), typeof(ushort),
             typeof(uint), typeof(float)
         };
+
+        /*!
+         * \brief   Query if 'type' is numeric.
+         *
+         * \param   type    The type to check.
+         *
+         * \return  true if numeric, false if not.
+         */
 
         internal static bool IsNumeric(Type type)
         {

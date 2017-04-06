@@ -44,18 +44,12 @@ namespace atbApi
             /*! rooting depth of the crop */
             public double zr { get; set; }
 
-            public SoilConditions()
-            {
-                drRz = 0.4;
-                drDz = 0.3;
-                de = 0.4;
-                dpe = 0.0;
-                zr = 0.3;
-                tawRz = null;
-                tawDz = null;
-            }
+            /*!
+             * \brief   Default constructor. Values are set to defaults.
+             *
+             */
 
-            public SoilConditions(double drRz, double drDz, double de, double dpe, double zr, Double? tawRz, Double? tawDz)
+            public SoilConditions(double drRz = 0.4, double drDz = 0.3, double de = 0.4, double dpe = 0.0, double zr = 0.3, Double? tawRz = null, Double? tawDz = null)
             {
                 this.drRz = drRz;
                 this.drDz = drDz;
@@ -66,7 +60,12 @@ namespace atbApi
                 this.tawDz = tawDz;
             }
 
-            //clone constructor
+            /*!
+             * \brief   Clone constructor.
+             *
+             * \param   soilConditions  The soil conditions to clone.
+             */
+
             public SoilConditions(SoilConditions soilConditions)
             {
                 //use this for .net 4.0
@@ -78,6 +77,16 @@ namespace atbApi
                     pi.SetValue(this, soilConditions.GetType().GetRuntimeProperty(pi.Name).GetValue(soilConditions, null), null);
                 }
             }
+
+            /*!
+             * \brief   Constructor with soil given to get taw from soil.
+             *
+             * \param   soil        The soil.
+             * \param   zr          The initial root depth.
+             * \param   depletionRz The initial depletion in the root zone.
+             * \param   depletionDz The initial depletion in the zone under root up to 2m.
+             * \param   depletionDe The initial depletion in the evaporation layer.
+             */
 
             public SoilConditions(Soil soil, double zr = 0.3, double depletionRz = 0.4, double depletionDz = 0.3, double depletionDe = 0.4)
             {
@@ -98,9 +107,25 @@ namespace atbApi
             }
         }
 
+        /*!
+         * \brief   Static class with useful functions to adjust soil conditions for changed rooting depth or exceeded depletion.
+         *
+         */
+
         internal static class SoilConditionTools
         {
-            //adjust drainage according to changed root depth
+            /*!
+             * \brief   adjust drainage according to changed root depth.
+             *
+             * \param   lastConditions  The last soil conditions.
+             * \param   tawRz           The totally available water in root zone.
+             * \param   tawDz           The totally available water in the zone under root up to 2m or maxDepth.
+             * \param   zr              The rooting depth.
+             * \param   maxDepth        The maximum depth of the soil profile.
+             *
+             * \return  The fixed SoilConditions.
+             */
+
             internal static SoilConditions AdjustSoilConditionsZr(SoilConditions lastConditions, double tawRz, double tawDz, double zr, double maxDepth)
             {
                 if (lastConditions.tawRz == null) lastConditions.tawRz = tawRz;
@@ -140,11 +165,26 @@ namespace atbApi
                 return lastConditions;
             }
 
-            internal static SoilConditions AdjustSoilConditionsExceeded(SoilConditions lastConditions, double tawRz, double tawDz, double zrNew, double maxDepth, ref double e, ref double et)
+
+            /*!
+             * \brief   adjust soil conditions if drainage is exceeded and the water content is negative.
+             *
+             * \param   lastConditions  The last soil conditions.
+             * \param   tawRz           The totally available water in root zone.
+             * \param   tawDz           The totally available water in the zone under root up to 2m or maxDepth.
+             * \param   zrNew           The new rooting depth.
+             * \param   maxDepth        The maximum depth of the soil profile.
+             * \param [in,out]  e       The actual evaporation, may be adjusted.
+             * \param [in,out]  t       The actual transpiration, may be adjusted.
+             *
+             * \return  The fixed SoilConditions.
+             */
+
+            internal static SoilConditions AdjustSoilConditionsExceeded(SoilConditions lastConditions, double tawRz, double tawDz, double zrNew, double maxDepth, ref double e, ref double t)
             {
                 if (zrNew != lastConditions.zr) lastConditions = AdjustSoilConditionsZr(lastConditions, tawRz, tawDz, zrNew, maxDepth);
 
-                var balanceSum = e + et;
+                var balanceSum = e + t;
                 //calculate soil water balance
                 var dpRz= Math.Max(0, balanceSum - lastConditions.drRz);
                 var drRz= lastConditions.drRz - balanceSum + dpRz;
@@ -159,8 +199,8 @@ namespace atbApi
                     var drRzExceeded= drRz - (double)lastConditions.tawRz;
 
                     var eFactor= e / balanceSum;
-                    var etFactor= et / balanceSum;
-                    et = Math.Min(0, et - drRzExceeded * etFactor);
+                    var etFactor= t / balanceSum;
+                    t = Math.Min(0, t - drRzExceeded * etFactor);
                     e = Math.Min(0, e - drRzExceeded * eFactor);
                     drRz = lastConditions.drRz - balanceSum - drRzExceeded + dpRz;
                 }
@@ -201,6 +241,11 @@ namespace atbApi
             public double humus { get; set; }
 
             private static IDictionary<String, String> propertyMapper = new Dictionary<String, String>();
+
+            /*!
+             * \brief   Default static constructor.
+             *
+             */
 
             static SoilValues()
             {
