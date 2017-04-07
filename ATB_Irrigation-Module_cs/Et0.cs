@@ -64,32 +64,19 @@ namespace atbApi
         private double __as;
         private double __bs;
 
-        /*! read only property to access _as value */
+        /*! read only property, Regression coefficient for calculation of global radiation. If omitted, FAO recommended default value of 0.25 is used. */
         public double _as { get { return __as; } }
-        /*! read only property to access _bs value */
+        /*! read only property, Regression coefficient for calculation of global radiation. If omitted, FAO recommended default value of 0.5 is used. */
         public double _bs { get { return __bs; } }
 
         /*!
-         * \brief   Default constructor using default regression coefficients
-         *          as: default: 0.25, (FAO56 paper)
-         *          bs: default: 0.5, (FAO56 paper)
+         * \brief   Custom constructor with optional self defined regression coefficients.
          *
+         * \param   _as May be null, default: 0.25, Regression coefficient for calculation of global radiation. If omitted, FAO recommended default value of 0.25 is used.
+         * \param   _bs May be null, default: 0.5, Regression coefficient for calculation of global radiation. If omitted, FAO recommended default value of 0.5 is used.
          */
 
-        public Et0PmArgs()
-        {
-            __as = 0.25;
-            __bs = 0.5;
-        }
-
-        /*!
-         * \brief   Custom constructor with self defined regression coefficients.
-         *
-         * \param   _as The "as" coefficient.
-         * \param   _bs The "bs" coefficient.
-         */
-
-        public Et0PmArgs(double _as, double _bs)
+        public Et0PmArgs(double _as = 0.25, double _bs = 0.5)
         {
             this.__as = _as;
             this.__bs = _bs;
@@ -109,37 +96,22 @@ namespace atbApi
         private double __ch;
         private double __eh;
 
-        /*! read only property to access _ct value */
+        /*! read only property, Empirical temperature coefficient, if omitted, recommended default value of 17.8 (Hargreaves 1994) is used. */
         public double _ct { get { return __ct; } }
-        /*! read only property to access _ch value */
+        /*! read only property, Empirical Hargreaves coefficient, if omitted, recommended default value of 0.0023 (Hargreaves 1994) is used. */
         public double _ch { get { return __ch; } }
-        /*! read only property to access _eh value */
+        /*! read only property, Empirical hargreaves exponent, if omitted, recommended default value of 0.5 (Hargreaves 1994) is used. */
         public double _eh { get { return __eh; } }
 
         /*!
-         * \brief   Default constructor using default regression coefficients
-         *          ct: default: 17.8, Empirical temperature coefficient (Hargreaves 1994)
-         *          ch: default: 0.0023, Empirical Hargreaves coefficient (Hargreaves 1994)
-         *          eh: default: 0.5, Empirical hargreaves exponent (Hargreaves 1994)
+         * \brief   Custom constructor with optional self defined regression coefficients.
          *
+         * \param   _ct     May be null, default: 17.8, Empirical temperature coefficient, if omitted, recommended default value of 17.8 (Hargreaves 1994) is used.
+         * \param   _ch     May be null, default: 0.0023, Empirical Hargreaves coefficient, if omitted, recommended default value of 0.0023 (Hargreaves 1994) is used.
+         * \param   _eh     May be null, default: 0.5, Empirical hargreaves exponent, if omitted, recommended default value of 0.5 (Hargreaves 1994) is used.
          */
 
-        public Et0HgArgs()
-        {
-            __ct = 17.8;
-            __ch = 0.0023;
-            __eh = 0.5;
-        }
-
-        /*!
-         * \brief   Custom constructor with self defined regression coefficients.
-         *
-         * \param   _ct     Empirical temperature coefficient, recommended default value of 17.8 (Hargreaves 1994)
-         * \param   _ch     Empirical Hargreaves coefficient, recommended default value of 0.0023 (Hargreaves 1994)
-         * \param   _eh     Empirical hargreaves exponent, recommended default value of 0.5 (Hargreaves 1994)
-         */
-
-        public Et0HgArgs(double _ct, double _ch, double _eh)
+        public Et0HgArgs(double _ct = 17.8, double _ch = 0.0023, double _eh = 0.5)
         {
             this.__ct = _ct;
             this.__ch = _ch;

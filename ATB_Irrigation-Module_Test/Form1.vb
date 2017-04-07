@@ -102,7 +102,7 @@ Public Class Form1
 
     Private Async Sub Button5_Click(sender As Object, e As EventArgs) Handles Button5.Click
         Dim climate As atbApi.data.Climate = New atbApi.data.Climate("12.34_-80.3", atbApi.data.TimeStep.day)
-        Dim location As atbApi.Location = New atbApi.Location(12.34, -80.3)
+        Dim location As atbApi.tools.Location = New atbApi.tools.Location(12.34, -80.3)
         Dim count As Integer = Await climate.loadClimateByLocationTagFromATBWebService(location, Nothing, New DateTime(2012, 1, 1, 0, 0, 0, DateTimeKind.Utc), New DateTime(2012, 12, 31, 0, 0, 0, DateTimeKind.Utc))
         TextBox1.AppendText(climate.name + " start:" + climate.start + " end:" + climate.end + vbNewLine)
 
@@ -112,7 +112,7 @@ Public Class Form1
     End Sub
 
     Private Async Sub Button6_Click(sender As Object, e As EventArgs) Handles Button6.Click
-        Dim location As atbApi.Location = New atbApi.Location(48.5, 9.3)
+        Dim location As atbApi.tools.Location = New atbApi.tools.Location(48.5, 9.3)
         Dim climate As atbApi.data.Climate = New atbApi.data.Climate("48.5_9.3", atbApi.data.TimeStep.day)
         Dim count As Integer = Await climate.loadClimateByLocationTagFromATBWebService(location, Nothing, New DateTime(2012, 1, 1, 0, 0, 0, DateTimeKind.Utc), New DateTime(2012, 12, 31, 0, 0, 0, DateTimeKind.Utc))
         Dim altitude As Double = Await climate.loadAltitudeFromATBWebService(location)

@@ -13,12 +13,13 @@
  * This module is intended to be used with the Microsoft .NET framework version 4.5. A version for .NET 4.0 is also available.
  *
  * \section     install_sec Installation
- *              All you need is the dynamic link library "ATB_Irrigation-Module_cs.dll".
+ *              All you need is the dynamic link library "ATB_Irrigation-Module_cs.dll" and
+ *              the .net extension for JSON "Newtonsoft.Json.dll".
  *              Data for a lot of plants and some standard soil types is compiled in and you can use it out of the box.
  *              Download the most recent version from here:
- *              <a href="ATB_Irrigation-Module_cs.dll">http://www.runlevel3.de/ATB_Irrigation-Module_cs.dll</a>
+ *              <a href="ATB_Irrigation-Module_cs.dll">https://www.runlevel3.de/ATB_Irrigation-Module_cs.dll</a>
  *              A comprehensive documentation is available here:
- *              <a href="ATB_Irrigation-Module_docs.zip">http://www.runlevel3.de/ATB_Irrigation-Module_docs.zip</a>
+ *              <a href="ATB_Irrigation-Module_docs.zip">https://www.runlevel3.de/ATB_Irrigation-Module_docs.zip</a>
  *
  * \section     quick_sec Quick Start
  *
@@ -52,12 +53,17 @@ using atbApi.tools;
  */
 namespace atbApi
 {
+    /*!
+     * \brief   class with helper functions for the transpiration and evaporation calculation
+     *
+     */
+
     public static class ETTools
     {
         /*!
-         * \brief Check ET arguments.
+         * \brief Check arguments for for an evaporation and transpiration calculation for errors.
          *
-         * \param [in,out]  args    The arguments.
+         * \param [in,out]  args    The arguments to check.
          *
          * \return  A String on error, null on success.
          */
@@ -136,7 +142,7 @@ namespace atbApi
         public double tawMax { get; set; }
 
         /*!
-         * Default constructor
+         * \brief   Default constructor
          *
          */
 
@@ -165,102 +171,81 @@ namespace atbApi
     }
 
     /*!
-         * \param   climate             The climate.
-         * \param   plant               The plant.
-         * \param   soil                The soil.
-         * \param   irrigationSchedule  data with irrigation amounts per calculation step.
-         * \param   location            latitude, longitude and altitude.
-         * \param   seedDate            The seed date.
-         * \param   harvestDate         The harvest date.
-         * \param   start
-         * Soil water content at begin of calculation. Six depletion values
-         * for root zone, deep zone and evaporation layer for two
-         * calculation approaches are maintained.
-         * \param   end                 The end Date/Time.
-         * \param   lastConditions      The last conditions.
-         * \param   _as
-         * Regression coefficient for calculation of global radiation. If
-         * omitted, FAO recommended default value of 0.25 is used.
-         * \param   _bs
-         * Regression coefficient for calculation of global radiation. If
-         * omitted, FAO recommended default value of 0.5 is used.
-         * \param   ct
-         * May be null, default: 17.8, Empirical temperature coefficient, if
-         * omitted, recommended default value of 17.8 (Hargreaves 1994) is
-         * used.
-         * \param   ch
-         * May be null, default: 0.0023, Empirical Hargreaves coefficient,
-         * if omitted, recommended default value of 0.0023 (Hargreaves 1994)
-         * is used.
-         * \param   eh
-         * May be null, default: 0.5, Empirical hargreaves exponent, if
-         * omitted, recommended default value of 0.5 (Hargreaves 1994) is
-         * used.
-         * \param   autoIrr             Set to true to automatically irrigate.
-         * \param   _autoIrrLevel
-         * If "autoIrr" is true, it will start at this fraction of available
-         * soil water. The value 0.8 is for 80%.
-         * \param   _autoIrrCutoff
-         * If "autoIrr" is true _and_ "autoIrrAmount" is 0 (automatic amount
-         * calculation), then the amount is calculated to saturate the soil
-         * right up to "autoIrrCutoff" value.
-         * \param   _autoIrrAmount
-         * If "autoIrr" is true, this amount of irrigation is added per day,
-         * if available soil water drops below "autoIrrLevel". If this value
-         * is 0, then the amount of drainage from last day is added if
-         * available soil water drops below "autoIrrLevel".
-         * \param   autoIrrType
-         * If "autoIrr" is true, this type of irrigation system is used for
-         * calculation of interception and fraction wetted.
-         * \param   autoIrrStartDay
-         * If "autoIrr" is used, irrigation is started at this day of plant
-         * development. No automatic irrigation is added before this day.
-         * \param   autoIrrEndDay
-         * If "autoIrr" is used, irrigation ends at this day of plant
-         * development. No automatic irrigation is added after this day.
-         * \param   _eFactor
-         * The calculated value of evaporation is always multiplied by this
-         * factor to reduce evaporation because of e.g. mulching.
-         * \param   _a
-         * Factor for calculation of interception. The LAI (leaf area index)
-         * value o the plant parameters is multiplied by this factor before
-         * interception is calculated.
-         * \param   kcIni
-         * Crop coefficient for initial plant stage. If this argument is
-         * given, the calculation of kcIni is skipped and this value is used
-         * instead.
-    */
+     * \brief   Encapsulates all arguments for an evaporation and transpiration calculation.
+     *
+     *
+     * ### param    climate             The climate.
+     * ### param    plant               The plant.
+     * ### param    soil                The soil.
+     * ### param    irrigationSchedule  
+     * ### param    location            
+     * ### param    seedDate            
+     * ### param    harvestDate         The harvest date. \param   start.
+     * ### param    end                 The end Date/Time.
+     * ### param    lastConditions      The last conditions.
+     */
+
     public class ETArgs
     {
+        /*! The climate data to use. */
         public Climate climate { get; set; }
+        /*! The plant parameters to use. */
         public Plant plant { get; set; }
+        /*! The soil parameters. */
         public Soil soil { get; set; }
+        /*! latitude, longitude and altitude */
         public Location location { get; set; }
+        /*! The seed date. */
         public DateTime seedDate { get; set; }
+        /*! The harvest date. */
         public DateTime harvestDate { get; set; }
+        /*! If seed date to harvest date does not match exactly the cultivation length of the plant parameters, the plant parameters are stretched to match the cultivation period. */
         public bool adaptStageLength { get; set; }
+        /*! Optional parameter for step wise calculation. If omitted, the whole period from seed to harvest date is calculated. */
         public DateTime? start { get; set; }
+        /*! Optional parameter for step wise calculation. If omitted, the whole period from seed to harvest date is calculated. */
         public DateTime? end { get; set; }
-        //from here optional arguments
+        /*! Data with irrigation amounts per calculation step. */
         public IrrigationSchedule irrigationSchedule { get; set; }
+        /*! Soil conditions from last calculation step. */
         public SoilConditions lastConditions { get; set; }
+        /*! Parameters to control, hwo automatic irrigation is applied. */
         public AutoIrrigationControl autoIrr { get; set; }
+        /*! Parameters to control reference evapotranspiration calculation with Penman Monteith equation. */
         public Et0PmArgs et0PmArgs { get; set; }
+        /*! Parameters to control reference evapotranspiration calculation with Hargreaves equation. */
         public Et0HgArgs et0HgArgs { get; set; }
+        /*! The calculated value of evaporation is always multiplied by this factor to reduce evaporation because of e.g. mulching. */
         public double eFactor { get; set; }
+        /*! Factor for calculation of interception. The LAI (leaf area index) value o the plant parameters is multiplied by this factor before interception is calculated. */
         public double a { get; set; }
 
-        public ETArgs()
+        /*!
+         * \brief   Default Constructor with all optional arguments.
+         *
+         * \param   adaptStageLength    true to adapt stage length.
+         * \param   irrigationSchedule  The irrigation schedule.
+         * \param   lastConditions      The last soil conditions.
+         * \param   autoIrr             The automatic irrigation parameters.
+         * \param   et0PmArgs           The et0 Penman Monteith arguments.
+         * \param   et0HgArgs           The et0 Hargreaves arguments.
+         * \param   eFactor             The factor for evaporation reduction.
+         * \param   a                   The a factor for interception calculation.
+         */
+
+        public ETArgs(
+            bool adaptStageLength = true,
+            IrrigationSchedule irrigationSchedule = null,
+            SoilConditions lastConditions = null,
+            AutoIrrigationControl autoIrr = null,
+            Et0PmArgs et0PmArgs = null,
+            Et0HgArgs et0HgArgs = null,
+            double eFactor = 1,
+            double a = 0.25
+        )
         {
-            adaptStageLength = true;
-            //from here optional arguments
-            irrigationSchedule = null;
-            lastConditions = null;
-            autoIrr = null;
-            et0PmArgs = new Et0PmArgs();
-            et0HgArgs = new Et0HgArgs();
-            eFactor = 1;
-            a = 0.25;
+            if (et0PmArgs == null) et0PmArgs = new Et0PmArgs();
+            if (et0HgArgs == null) et0HgArgs = new Et0HgArgs();
         }
 
         /*!
@@ -284,7 +269,7 @@ namespace atbApi
 
 
     /*!
-     * \brief   Encapsulates the result of a transpiration and evaporation calculation.
+     * \brief   Encapsulates the cumulated result of a transpiration and evaporation calculation.
      *
      */
 
@@ -322,17 +307,17 @@ namespace atbApi
         public double netIrrigation { get; set; }
         /*! interceptionIrr[mm], unit: "mm", description: Additional interception for the irrigated water. */
         public double interceptionIrr { get; set; }
-        /*! dpRz[mm], unit: "mm", description: Deep percolation from root zone for dual calculation E plus T. This amount of water percolates from the root to the deep zone. */
+        /*! dpRz[mm], unit: "mm", description: Deep percolation from root zone. This amount of water percolates from the root to the deep zone. */
         public double dpRz { get; set; }
-        /*! dpDz[mm], unit: "mm", description: Deep percolation from deep zone for dual calculation E plus T. This amount of water percolates from the deep zone to ground water. */
+        /*! dpDz[mm], unit: "mm", description: Deep percolation from deep zone. This amount of water percolates from the deep zone to ground water. */
         public double dpDz { get; set; }
         /*! drDiff[mm], unit: "mm", description: Soil drainage difference between "initialConditions" and "lastConditions". If positive, the soil is more drained and this amount of water was additional available for the plant. If negative, the soil is more saturated. */
         public double drDiff { get; set; }
         /*! autoIrrigationFw, unit: "none", description: Fraction of wetted surface, depending on irrigation method this value is usually between 0.3 for drip irrigation and 1 for sprinkler. */
         public double autoIrrigationFw { get; set; }
-        /*! autoIrrigation[mm], unit: "mm", description: Sum of calculated irrigation demand for E plus T calculation. Fraction of wetted surface is not considered. */
+        /*! autoIrrigation[mm], unit: "mm", description: Sum of calculated irrigation demand. Fraction of wetted surface is not considered. */
         public double autoIrrigation { get; set; }
-        /*! autoNetIrrigation[mm], unit: "mm", description: Sum of calculated irrigation demand for E plus T calculation. Depending on irrigation type and fraction of wetted surface, the netto amount for the whole area may be lower lower than applied irrigation water. */
+        /*! autoNetIrrigation[mm], unit: "mm", description: Sum of calculated irrigation demand. Depending on irrigation type and fraction of wetted surface, the netto amount for the whole area may be lower lower than applied irrigation water. */
         public double autoNetIrrigation { get; set; }
         /*! interceptionAutoIrr[mm], unit: "mm", description: Additional interception for the automated irrigated water. */
         public double interceptionAutoIrr { get; set; }
@@ -348,7 +333,7 @@ namespace atbApi
         public TransientValues tValues { get; set; }
 
         /*!
-         * \brief   Default constructor.
+         * \brief   Default constructor, internal dictionarys are intialized.
          *
          */
 
@@ -408,6 +393,11 @@ namespace atbApi
         }
     }
 
+    /*!
+     * \brief   Encapsulates the daily result of a transpiration and evaporation calculation.
+     *
+     */
+
     public class ETDailyValues
     {
         /*! et0[mm], unit: "mm", description: Sum of reference Evapotranspiration for calculation period. */
@@ -416,12 +406,13 @@ namespace atbApi
         public double e { get; set; }
         /*! eAct[mm], unit: "mm", description: Sum of actual Evaporation for calculation period. */
         public double eAct { get; set; }
-        /*! tc[mm], unit: "mm", description: Sum of Transpiration for calculation period. */
+        /*! t[mm], unit: "mm", description: Sum of Transpiration for calculation period. */
         public double t { get; set; }
         /*! tAct[mm], unit: "mm", description: Sum of actual Transpiration for calculation period. */
         public double tAct { get; set; }
         /*! precipitation[mm], unit: "mm", description: Precipitation sum for calculation period. */
         public double precipitation { get; set; }
+        /*! netPrecipitation[mm], unit: "mm", description: Netto precipitation sum for calculation period. */
         public double netPrecipitation { get; set; }
         /*! interception[mm], unit: "mm", description: Interception sum for calculation period. This amount of water from "precipitation" is intercepted by leafes and does not reach the soil surface. */
         public double interception { get; set; }
@@ -433,39 +424,63 @@ namespace atbApi
         public double netIrrigation { get; set; }
         /*! interceptionIrr[mm], unit: "mm", description: Additional interception for the irrigated water. */
         public double interceptionIrr { get; set; }
+        /*! drRz[mm], unit: "mm", description: Drainage in root zone. This amount of water is actually depleted. */
         public double drRz { get; set; }
+        /*! drDz[mm], unit: "mm", description: Drainage in zone from roots to maximum soil depth, usually 2m. This amount of water is actually depleted. */
         public double drDz { get; set; }
-        /*! dpRzTc[mm], unit: "mm", description: Deep percolation from root zone for dual calculation E plus T. This amount of water percolates from the root to the deep zone. */
+        /*! dpRz[mm], unit: "mm", description: Deep percolation from root zone. This amount of water percolates from the root to the deep zone. */
         public double dpRz { get; set; }
-        /*! dpDzTc[mm], unit: "mm", description: Deep percolation from deep zone for dual calculation E plus T. This amount of water percolates from the deep zone to ground water. */
+        /*! dpDz[mm], unit: "mm", description: Deep percolation from deep zone. This amount of water percolates from the deep zone to ground water. */
         public double dpDz { get; set; }
-        /*! drDiffTc[mm], unit: "mm", description: Soil drainage difference between "initialConditions" and "lastConditions". If positive, the soil is more drained and this amount of water was additional available for the plant. If negative, the soil is more saturated. */
+        /*! drDiff[mm], unit: "mm", description: Soil drainage difference between "initialConditions" and "lastConditions". If positive, the soil is more drained and this amount of water was additional available for the plant. If negative, the soil is more saturated. */
         public double drDiff { get; set; }
         /*! autoIrrigationFw, unit: "none", description: Fraction of wetted surface, depending on irrigation method this value is usually between 0.3 for drip irrigation and 1 for sprinkler. */
         public double autoIrrigationFw { get; set; }
-        /*! autoIrrigationTc[mm], unit: "mm", description: Sum of calculated irrigation demand for E plus T calculation. Fraction of wetted surface is not considered. */
+        /*! autoIrrigation[mm], unit: "mm", description: Sum of calculated irrigation demand. Fraction of wetted surface is not considered. */
         public double autoIrrigation { get; set; }
-        /*! autoNetIrrigationTc[mm], unit: "mm", description: Sum of calculated irrigation demand for E plus T calculation. Depending on irrigation type and fraction of wetted surface, the netto amount for the whole area may be lower lower than applied irrigation water. */
+        /*! autoNetIrrigation[mm], unit: "mm", description: Sum of calculated irrigation demand. Depending on irrigation type and fraction of wetted surface, the netto amount for the whole area may be lower lower than applied irrigation water. */
         public double autoNetIrrigation { get; set; }
-        /*! interceptionAutoIrrTc[mm], unit: "mm", description: Additional interception for the automated irrigated water. */
+        /*! interceptionAutoIrr[mm], unit: "mm", description: Additional interception for the automated irrigated water. */
         public double interceptionAutoIrr { get; set; }
+        /*! plantDay, unit: "none", description: Actual day of plant development. */
         public int plantDay { get; set; }
+        /*! plantZr[m], unit: "m", description: Actual plant rooting depth. */
         public double plantZr { get; set; }
+        /*! plantStage, unit: "none", description: Actual stage of plant development. */
         public String plantStage { get; set; }
+        /*!  */
         public double kcb { get; set; }
+        /*!  */
         public double kcbAdj { get; set; }
+        /*!  */
         public double de { get; set; }
+        /*!  */
         public double dpe { get; set; }
+        /*!  */
         public double tawRz { get; set; }
+        /*!  */
         public double tawDz { get; set; }
+        /*!  */
         public double ks { get; set; }
+        /*!  */
         public double pAdj { get; set; }
+        /*!  */
         public double raw { get; set; }
+        /*!  */
         public double drRzExceeded { get; set; }
+        /*!  */
         public double drDzExceeded { get; set; }
+        /*!  */
         public double precIrrEff { get; set; }
+        /*!  */
         public double soilStorageEff { get; set; }
+        /*!  */
         public EvaporationResult eResult { get; set; }
+
+        /*!
+         * \brief   Default constructor, internal dictionarys are initialized.
+         *
+         */
 
         public ETDailyValues()
         {
@@ -484,7 +499,7 @@ namespace atbApi
     public static class Transpiration
     {
         /*!
-         * Transpiration calculation.
+         * \brief   Transpiration calculation.
          *
          * \author  Hunstock
          * \date    29.10.2015
