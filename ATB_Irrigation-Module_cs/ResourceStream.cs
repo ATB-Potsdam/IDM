@@ -1,7 +1,7 @@
 ﻿/*!
  * \file    ResourceStream.cs
  *
- * \brief   Implements the resource stream class to read compiled in resources.
+ * \brief   Implements the resource stream class to read compiled in resources like the internal plant and soil databases.
  *
  * \author	Hunstock
  * \date     11.08.2015

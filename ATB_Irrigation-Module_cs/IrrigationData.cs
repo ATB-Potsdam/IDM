@@ -100,6 +100,7 @@ namespace atbApi
             public double amount { get; set; }
             /*! If "autoIrrigation" is used _and_ "autoIrrAmount" is 0 _and_ "autoIrrLevel" is 0, then irrigation is started at "1 - pAdj - autoIrrDeficit" */
             public double deficit { get; set; }
+            /*! Parameters defining irrigation type. */
             public IrrigationType type { get; set; }
             /*! Automatic irrigation start day, no irrigation is applied before this day of plant development */
             public Int32? startDay { get; set; }
@@ -123,7 +124,7 @@ namespace atbApi
                 double level = 0,
                 double cutoff = 0.15,
                 double amount = 0,
-                double deficit = 0.2,
+                double deficit = 0,
                 IrrigationType type = null,
                 Int32? startDay = null,
                 Int32? endDay = null

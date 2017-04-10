@@ -93,7 +93,7 @@ namespace local
             }
         }
 
-        internal static async Task<Stream> LoadClimateIdsFromATBWebService(String tag)
+        internal static async Task<Stream> LoadClimateIdsFromATBWebService(String tag = null)
         {
             try
             {

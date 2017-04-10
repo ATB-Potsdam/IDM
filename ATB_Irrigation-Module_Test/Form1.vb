@@ -91,7 +91,7 @@ Public Class Form1
         fs.Close()
         TextBox1.AppendText(climate.name + " start:" + climate.start + " end:" + climate.end + vbNewLine)
 
-        For i = 1 To 6
+        For i = 0 To 5
             Dim fs1 As System.IO.FileStream = New IO.FileStream("C:\IWRM_MIKE-Basin_Irrigation-Module\testdata\climate.uea_cru_public.date-1900-01-01T00-00-00.000Z_clean_" & i & ".csv", IO.FileMode.Open)
             Dim climate1 As atbApi.data.Climate = New atbApi.data.Climate(fs1, atbApi.data.TimeStep.month)
             fs1.Close()
@@ -133,8 +133,8 @@ Public Class Form1
 
 
     Private Async Sub Button7_Click(sender As Object, e As EventArgs) Handles Button7.Click
-        'Dim climate As atbApi.data.Climate = New atbApi.data.Climate("DWD_03987_Potsdam", "53c6b30845900e364c000013", atbApi.data.TimeStep.day)
-        Dim climate As atbApi.data.Climate = New atbApi.data.Climate("UEA_CRU_timeseries_v3.21_52.25_32.75", "53506649594fa52d48007088", atbApi.data.TimeStep.day)
+        'Dim climate As atbApi.data.Climate = New atbApi.data.Climate("DWD_03987_Potsdam", atbApi.data.TimeStep.day, "53c6b30845900e364c000013")
+        Dim climate As atbApi.data.Climate = New atbApi.data.Climate("UEA_CRU_timeseries_v3.21_52.25_32.75", atbApi.data.TimeStep.day, "53506649594fa52d48007088")
 
         'define interval to load climate data
         'Dim climateStart As DateTime = New DateTime(2015, 1, 1, 0, 0, 0, DateTimeKind.Utc)
@@ -168,9 +168,8 @@ Public Class Form1
         Dim startDate As DateTime = New DateTime(seedDate.Year, seedDate.Month, 1, 0, 0, 0, seedDate.Kind)
         Dim endDate As DateTime = New DateTime(seedDate.Year, seedDate.Month, DateTime.DaysInMonth(seedDate.Year, seedDate.Month), 0, 0, 0, seedDate.Kind)
         'etArgs.autoIrr = New atbApi.data.AutoIrrigationControl()
+        'etArgs.autoIrr = New atbApi.data.AutoIrrigationControl(level:=0, cutoff:=0.15, deficit:=0.2)
         etArgs.autoIrr = New atbApi.data.AutoIrrigationControl(level:=0, cutoff:=0.1)
-
-
 
         Do
             etArgs.start = startDate
@@ -188,19 +187,19 @@ Public Class Form1
 
 
     Private Async Sub Button8_Click(sender As Object, e As EventArgs) Handles Button8.Click
-        Dim climateNames = Await atbApi.data.ClimateWebServiceDb.getClimateNames(False, Nothing)
+        'load climate names from http
+        Dim climateNames = Await atbApi.data.ClimateWebServiceDb.GetClimateNames()
         For i = 0 To climateNames.Count - 1
             ComboBox3.Items.Add(climateNames(i))
         Next
 
         ComboBox3.Sorted = True
-
-        'Dim seedDate As DateTime = New DateTime(2012, 4, 12, 0, 0, 0, DateTimeKind.Utc)
-        'Dim harvestDate As DateTime = New DateTime(2012, 10, 5, 0, 0, 0, DateTimeKind.Utc)
-        'Dim testClimate As Task(Of atbApi.data.Climate) = atbApi.data.ClimateDb.getClimate("DWD_04371_Salzuflen_Bad", seedDate, harvestDate, atbApi.data.TimeStep.day)
     End Sub
 
     Private Sub ComboBox3_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ComboBox3.SelectedIndexChanged
+        Dim seedDate As DateTime = New DateTime(2012, 4, 12, 0, 0, 0, DateTimeKind.Utc)
+        Dim harvestDate As DateTime = New DateTime(2012, 10, 5, 0, 0, 0, DateTimeKind.Utc)
+        Dim testClimate As Task(Of atbApi.data.Climate) = atbApi.data.ClimateWebServiceDb.GetClimate(ComboBox3.SelectedItem, seedDate, harvestDate, atbApi.data.TimeStep.day)
 
     End Sub
 

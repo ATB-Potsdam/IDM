@@ -1,10 +1,10 @@
 ﻿/*!
- * \file		PlantData.cs
+ * \file	PlantData.cs
  *
  * \brief	Class file for plant database, parameter types and data access
  *  
  * \author	Hunstock
- * \date     09.07.2015
+ * \date    09.07.2015
  */
 
 using System;
@@ -86,7 +86,7 @@ namespace atbApi
                 // propertyMapper.Add("stage", "name");
             }
 
-            public new void parseData(IDictionary<String, String> values, CultureInfo cultureInfo = null)
+            public void parseData(IDictionary<String, String> values, CultureInfo cultureInfo = null)
             {
                 base.parseData(values, propertyMapper, cultureInfo: cultureInfo);
             }

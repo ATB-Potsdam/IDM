@@ -4,7 +4,7 @@
 * \brief	Class file for climate data types and access
 *
 * \author	Hunstock
-* \date	09.07.2015
+* \date     09.07.2015
 */
 
 using System;
@@ -89,7 +89,7 @@ namespace atbApi
              * \param   cultureInfo Information to parse data in different localized formats
              */
 
-            new public void parseData(IDictionary<String, String> values, CultureInfo cultureInfo = null)
+            public void parseData(IDictionary<String, String> values, CultureInfo cultureInfo = null)
             {
                 base.parseData(values, propertyMapper, cultureInfo: cultureInfo);
             }
@@ -119,7 +119,6 @@ namespace atbApi
          *          
          *          This class is bound to a Sponge-JS web service from where the climate _ids and
          *          names are loaded at initialisation.
-         *
          */
 
         public static class ClimateWebServiceDb
@@ -127,7 +126,7 @@ namespace atbApi
             private static IDictionary<String, String> climateIds = new Dictionary<String, String>();
             private static IDictionary<String, Climate> climateInstances = new Dictionary<String, Climate>();
 
-            private static async Task<int> initializeInstance(String tag)
+            private static async Task<int> InitializeInstance(String tag = null)
             {
                 climateIds.Clear();
                 climateInstances.Clear();
@@ -152,16 +151,25 @@ namespace atbApi
              * \param   tag     set to prefer a different tag, can be null for default tag
              *
              * \return  The list of climate names.
+             *          
+             * \code{.unparsed}
+             *   'load avaliable climate names from http and add anems to ComboBox
+             *   Dim climateNames = Await atbApi.data.ClimateWebServiceDb.GetClimateNames()
+             *   For i = 0 To climateNames.Count - 1
+             *       ComboBox1.Items.Add(climateNames(i))
+             *   Next
+             *   ComboBox1.Sorted = True
+             * \endcode
              */
 
-            public static async Task<ICollection<String>> getClimateNames(bool reinit, String tag)
+            public static async Task<ICollection<String>> GetClimateNames(bool reinit = false, String tag = null)
             {
-                if (climateIds.Count == 0 || reinit == true) await initializeInstance(tag);
+                if (climateIds.Count == 0 || reinit == true) await InitializeInstance(tag);
                 return climateIds.Keys;
             }
 
             /*!
-             * \brief   Gets climate data from the ATB webservice API.
+             * \brief   Gets climate data from start to end from the ATB webservice API.
              *
              * \param   name    The name.
              * \param   start   The start Date/Time.
@@ -171,9 +179,9 @@ namespace atbApi
              * \return  The climate class filled with data.
              */
 
-            public static async Task<Climate> getClimate(String name, DateTime start, DateTime end, TimeStep step)
+            public static async Task<Climate> GetClimate(String name, DateTime start, DateTime end, TimeStep step = TimeStep.day)
             {
-                Climate _climate = climateInstances.ContainsKey(name) ? climateInstances[name] : new Climate(climateIds[name], name, step);
+                Climate _climate = climateInstances.ContainsKey(name) ? climateInstances[name] : new Climate(name, step, dataObjId: climateIds[name]);
                 climateInstances[name] = _climate;
 
                 await _climate.loadClimateByIdFromATBWebService(start, end);
@@ -223,6 +231,8 @@ namespace atbApi
              *
              * \remarks The following code example reads 6 different csv files into the database.
              *
+             * \return  The number if climates in this database.
+             *
              * \code{.unparsed}
              * 'create CultureInfo for english formatted csv data
              * Dim cultureInfoEn As CultureInfo = New CultureInfo("en-US")
@@ -238,10 +248,11 @@ namespace atbApi
              * \endcode
              */
 
-            public void addClimate(Stream climateFileStream, TimeStep step, CultureInfo cultureInfo = null)
+            public int addClimate(Stream climateFileStream, TimeStep step, CultureInfo cultureInfo = null)
             {
                 Climate _climate = new Climate(climateFileStream, step, cultureInfo);
                 climates[_climate.name] = _climate;
+                return climates.Count;
             }
 
             /*!
@@ -343,27 +354,13 @@ namespace atbApi
 
             /*!
              * \brief   Constructor to create empty climate to be filled.
-             *
-             * \param   name    The name of the climate.
-             * \param   step    incremental time step of the data
-             */
-
-            public Climate(String name, TimeStep step, CultureInfo cultureInfo = null)
-            {
-                _step = step;
-                _name = name;
-                _cultureInfo = cultureInfo;
-            }
-
-            /*!
-             * \brief   Constructor to create empty climate to be filled.
              * 
              * \param   name        The name of the climate.
              * \param   dataObjId   Database _id of the data object. With this _id the needed data is requested from the ATB web service
              * \param   step        incremental time step of the data
              */
 
-            public Climate(String name, String dataObjId, TimeStep step, CultureInfo cultureInfo = null)
+            public Climate(String name, TimeStep step, String dataObjId = null, CultureInfo cultureInfo = null)
             {
                 _step = step;
                 _name = name;

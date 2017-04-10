@@ -1,10 +1,10 @@
 ﻿/*!
-* \file		CropSequenceData.cs
+* \file		CropSequence.cs
 *
 * \brief	Class file for cropSequence data types, access and computation of a whole crop sequence for many fields.
 *
 * \author	Hunstock
-* \date	09.07.2015
+* \date     09.07.2015
 */
 
 using System;

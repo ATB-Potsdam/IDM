@@ -244,12 +244,19 @@ namespace atbApi
             double a = 0.25
         )
         {
-            if (et0PmArgs == null) et0PmArgs = new Et0PmArgs();
+            this.adaptStageLength = adaptStageLength;
+            this.irrigationSchedule = irrigationSchedule;
+            this.lastConditions = lastConditions;
+            this.autoIrr = autoIrr;
+            this.et0PmArgs = et0PmArgs == null ? new Et0PmArgs() : et0PmArgs;
+            this.et0HgArgs = et0HgArgs == null ? new Et0HgArgs() : et0HgArgs;
             if (et0HgArgs == null) et0HgArgs = new Et0HgArgs();
+            this.eFactor = eFactor;
+            this.a = a;
         }
 
         /*!
-         * \brief   clone constructor.
+         * \brief   Clone constructor.
          *
          * \param   etArgs  The et arguments to clone.
          */
@@ -348,7 +355,7 @@ namespace atbApi
         }
 
         /*!
-         * \brief   clone constructor.
+         * \brief   Clone constructor.
          *
          * \param   etResult    The et result to clone.
          */
@@ -448,33 +455,33 @@ namespace atbApi
         public double plantZr { get; set; }
         /*! plantStage, unit: "none", description: Actual stage of plant development. */
         public String plantStage { get; set; }
-        /*!  */
+        /*! kcb, unit: "none", description: The basal crop coefficient. */
         public double kcb { get; set; }
-        /*!  */
+        /*! kcbAdj, unit: "none", description: The water stress adjusted basal crop coefficient. */
         public double kcbAdj { get; set; }
-        /*!  */
+        /*! de, unit: "mm", description: Drainage in evaporation layer. */
         public double de { get; set; }
-        /*!  */
+        /*! dpe, unit: "mm", description: Percolation from evaporation layer. */
         public double dpe { get; set; }
-        /*!  */
+        /*! tawRz, unit: "mm", description: Totally available water in the root zone. */
         public double tawRz { get; set; }
-        /*!  */
+        /*! tawDz, unit: "mm", description: Totally available water in the zone below roots up to 2m. */
         public double tawDz { get; set; }
-        /*!  */
+        /*! ks, unit: "none", description: Water stress factor, 1 for no stress. */
         public double ks { get; set; }
-        /*!  */
+        /*! pAdj, unit: "none", description: The plant critical deplation fraction p, adjusted. */
         public double pAdj { get; set; }
-        /*!  */
+        /*! raw, unit: "mm", description: Readliy available water. */
         public double raw { get; set; }
-        /*!  */
+        /*! drRzExceeded, unit: "mm", description: If drainage in root zone exceeds totally available water drRz > tawRz, this value is set and the drainage is corrected. */
         public double drRzExceeded { get; set; }
-        /*!  */
+        /*! drDzExceeded, unit: "mm", description: If drainage in zone below roots exceeds totally available water drDz > tawDz, this value is set and the drainage is corrected. */
         public double drDzExceeded { get; set; }
-        /*!  */
+        /*! precIrrEff, unit: "none", description: Efficiency regarding percolation of precipitation and irrigation, calculated as: (netPrecipitation - dpDz) / (precipitation + netIrrigation + autoNetIrrigation) */
         public double precIrrEff { get; set; }
-        /*!  */
+        /*! soilStorageEff, unit: "none", description: Efficiency of water storage in soil root zone, calculated as: (netPrecipitation - dpRz) / lastConditions.drRz */
         public double soilStorageEff { get; set; }
-        /*!  */
+        /*! eResult, unit: "none", description: Detailed result of the evaporation subcalculation. */
         public EvaporationResult eResult { get; set; }
 
         /*!
@@ -506,9 +513,10 @@ namespace atbApi
          *
          * \param [in,out]  args    Arguments.
          * \param [in,out]  result  The result.
-         * \param   keepDailyValues true to keep daily values as part of the result
+         * \param   keepDailyValues True to keep daily values as part of the result
          *                          consumes a lot of memory for larger calculations.
-         * \param   dryRun          true to dry run.
+         * \param   dryRun          True to dry run, used to calculate "nice to have" irrigation.
+         *                          Result values are not cumulated.
          *
          * \return  true if it succeeds, false if it fails.
          */
@@ -561,7 +569,7 @@ namespace atbApi
             return ETCalcLoop(ref args, ref result, stopWatch, keepDailyValues, dryRun);
         }
 
-
+        //the main loop
         private static bool ETCalcLoop(
             ref ETArgs args,
             ref ETResult result,
@@ -647,16 +655,16 @@ namespace atbApi
                     )
                 ) autoIrrWindow = false;
 
-                var irrDeficit = 0.2;
                 if (args.autoIrr != null && autoIrrWindow && !plantSet.isFallow && tawRz != 0)
                 {
                     if (args.autoIrr.level == 0) {
-                        if (soilSaturation < 1 - loopResult.pAdj - irrDeficit) {
+                        if (soilSaturation < 1 - loopResult.pAdj - args.autoIrr.deficit)
+                        {
                             loopResult.autoIrrigation = args.autoIrr.amount;
                             loopResult.autoNetIrrigation = loopResult.autoIrrigation * args.autoIrr.type.fw;
                             if (args.autoIrr.amount == 0)
                             {
-                                loopResult.autoNetIrrigation = (1 - loopResult.pAdj - irrDeficit - soilSaturation + args.autoIrr.cutoff) * tawRz - loopResult.netIrrigation;
+                                loopResult.autoNetIrrigation = (1 - loopResult.pAdj - args.autoIrr.deficit - soilSaturation + args.autoIrr.cutoff) * tawRz - loopResult.netIrrigation;
                                 loopResult.autoIrrigation = loopResult.autoNetIrrigation / args.autoIrr.type.fw;
                             }
                         }
@@ -694,11 +702,11 @@ namespace atbApi
                 if (plantSet.LAI != 0 && args.a != 0)
                 {
                     loopResult.interception = args.a * (double)plantSet.LAI * (1 - 1 / (1 + (cf * (double)climateSet.precipitation) / (args.a * (double)plantSet.LAI)));
+                    loopResult.interceptionIrr = args.a * (double)plantSet.LAI * (1 - 1 / (1 + (cf * loopResult.netIrrigation) / (args.a * (double)plantSet.LAI)));
+                    loopResult.interceptionIrr = args.irrigationSchedule != null && args.irrigationSchedule.type != null ? loopResult.interceptionIrr * args.irrigationSchedule.type.interception : 0.0;
+                    loopResult.interceptionAutoIrr = args.a * (double)plantSet.LAI * (1 - 1 / (1 + (cf * loopResult.autoNetIrrigation) / (args.a * (double)plantSet.LAI)));
+                    loopResult.interceptionAutoIrr = args.autoIrr != null && args.autoIrr.type != null ? loopResult.interceptionAutoIrr * args.autoIrr.type.interception : 0.0;
                 }
-                loopResult.interceptionIrr = args.a * (double)plantSet.LAI * (1 - 1 / (1 + (cf * loopResult.netIrrigation) / (args.a * (double)plantSet.LAI)));
-                loopResult.interceptionAutoIrr = args.a * (double)plantSet.LAI * (1 - 1 / (1 + (cf * loopResult.autoNetIrrigation) / (args.a * (double)plantSet.LAI)));
-                loopResult.interceptionIrr = args.irrigationSchedule != null && args.irrigationSchedule.type != null ? loopResult.interceptionIrr * args.irrigationSchedule.type.interception : 0.0;
-                loopResult.interceptionAutoIrr = args.autoIrr != null && args.autoIrr.type != null ? loopResult.interceptionAutoIrr * args.autoIrr.type.interception : 0.0;
 
                 //calculate netPrecipitation for Etc/Tc
                 loopResult.netPrecipitation =

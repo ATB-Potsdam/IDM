@@ -29,48 +29,9 @@ namespace atbApi
 
         public abstract class BaseValues
         {
-            private static IDictionary<String, String> emptyMap = new Dictionary<String, String>();
-
-            /*!
-             * \brief   Default empty constructor.
-             *
-             */
-
-            public BaseValues()
-            {
-            }
-
             /*!
              * \brief   Parse readed csv key-value pairs to real data types.
-             *
-             * \param   values      The values key-value pairs with serialized key-value pairs.
-             * \param   cultureInfo Optional information .
-             */
-
-            protected void parseData(IDictionary<String, String> values, CultureInfo cultureInfo = null)
-            {
-                parseData(values, emptyMap, cultureInfo: cultureInfo);
-            }
-
-            /*!
-             * \brief   Parse data, iterates through all properties with getter and setter and tries to set with
-             * values.
-             *
-             * \param   values      The csv values.
-             * \param   pdb         The plant database to parse type "Plant".
-             * \param   sdb         The soil database to parse type "Soil".
-             * \param   cdb         The climate database to parse type "Climate".
-             * \param   cultureInfo Information to parse data in different localized formats
-             */
-
-            protected void parseData(IDictionary<String, String> values, PlantDb pdb = null, SoilDb sdb = null, ClimateDb cdb = null, CultureInfo cultureInfo = null)
-            {
-                parseData(values, emptyMap, pdb, sdb, cdb, cultureInfo: cultureInfo);
-            }
-
-            /*!
-             * \brief   Parse data, iterates through all properties with getter and setter and tries to set with
-             * values.
+             *          Iterates through all properties with getter and setter and tries to set with value.
              *
              * \param   values      The csv values.
              * \param   nameDict    Dictionary to translate names. 'property name' => 'csv-field name'.
@@ -80,7 +41,7 @@ namespace atbApi
              * \param   cultureInfo Information to parse data in different localized formats
              */
 
-            protected void parseData(IDictionary<String, String> values, IDictionary<String, String> nameDict, PlantDb pdb = null, SoilDb sdb = null, ClimateDb cdb = null, CultureInfo cultureInfo = null)
+            protected void parseData(IDictionary<String, String> values, IDictionary<String, String> nameDict = null, PlantDb pdb = null, SoilDb sdb = null, ClimateDb cdb = null, CultureInfo cultureInfo = null)
             {
                 //use this for .net 4.0
                 //foreach (PropertyInfo pi in this.GetType().GetProperties())
@@ -89,7 +50,7 @@ namespace atbApi
                 {
                     //if (pi.GetGetMethod() == null || pi.GetSetMethod() == null) continue;
 
-                    String name = nameDict.ContainsKey(pi.Name) ? nameDict[pi.Name] : pi.Name;
+                    String name = nameDict != null && nameDict.ContainsKey(pi.Name) ? nameDict[pi.Name] : pi.Name;
                     if (!values.ContainsKey(name)) continue;
 
                     String value = values[name];
