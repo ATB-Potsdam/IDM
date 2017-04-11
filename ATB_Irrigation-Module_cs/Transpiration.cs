@@ -17,9 +17,9 @@
  *              the .net extension for JSON "Newtonsoft.Json.dll".
  *              Data for a lot of plants and some standard soil types is compiled in and you can use it out of the box.
  *              Download the most recent version from here:
- *              <a href="ATB_Irrigation-Module_cs.dll">https://www.runlevel3.de/ATB_Irrigation-Module_cs.dll</a>
+ *              <a href="https://www.runlevel3.de/ATB_Irrigation-Module_cs.zip">https://www.runlevel3.de/ATB_Irrigation-Module_cs.zip</a>
  *              A comprehensive documentation is available here:
- *              <a href="ATB_Irrigation-Module_docs.zip">https://www.runlevel3.de/ATB_Irrigation-Module_docs.zip</a>
+ *              <a href="https://www.runlevel3.de/ATB_Irrigation-Module_docs.zip">https://www.runlevel3.de/ATB_Irrigation-Module_docs.zip</a>
  *
  * \section     quick_sec Quick Start
  *
