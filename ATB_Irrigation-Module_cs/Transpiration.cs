@@ -17,9 +17,9 @@
  *              the .net extension for JSON "Newtonsoft.Json.dll".
  *              Data for a lot of plants and some standard soil types is compiled in and you can use it out of the box.
  *              Download the most recent version from here:
- *              <a href="https://www.runlevel3.de/ATB_Irrigation-Module_cs.zip">https://www.runlevel3.de/ATB_Irrigation-Module_cs.zip</a>
+ *              <a href="https://www.runlevel3.de/atb/irrigation-module/">https://www.runlevel3.de/atb/irrigation-module/</a>
  *              A comprehensive documentation is available here:
- *              <a href="https://www.runlevel3.de/ATB_Irrigation-Module_docs.zip">https://www.runlevel3.de/ATB_Irrigation-Module_docs.zip</a>
+ *              <a href="https://www.runlevel3.de/atb/irrigation-module-docs/">https://www.runlevel3.de/atb/irrigation-module-docs/</a>
  *
  * \section     quick_sec Quick Start
  *
@@ -660,9 +660,9 @@ namespace atbApi
                     if (args.autoIrr.level == 0) {
                         if (soilSaturation < 1 - loopResult.pAdj - args.autoIrr.deficit)
                         {
-                            loopResult.autoIrrigation = args.autoIrr.amount;
+                            loopResult.autoIrrigation = args.autoIrr.amount.amount;
                             loopResult.autoNetIrrigation = loopResult.autoIrrigation * args.autoIrr.type.fw;
-                            if (args.autoIrr.amount == 0)
+                            if (args.autoIrr.amount.amount == 0)
                             {
                                 loopResult.autoNetIrrigation = (1 - loopResult.pAdj - args.autoIrr.deficit - soilSaturation + args.autoIrr.cutoff) * tawRz - loopResult.netIrrigation;
                                 loopResult.autoIrrigation = loopResult.autoNetIrrigation / args.autoIrr.type.fw;
@@ -672,10 +672,10 @@ namespace atbApi
                     else {
                         if (soilSaturation < args.autoIrr.level)
                         {
-                            loopResult.autoIrrigation = args.autoIrr.amount;
+                            loopResult.autoIrrigation = args.autoIrr.amount.amount;
                             loopResult.autoIrrigationFw = args.autoIrr.type.fw;
                             loopResult.autoNetIrrigation = loopResult.autoIrrigation * args.autoIrr.type.fw;
-                            if (args.autoIrr.amount == 0)
+                            if (args.autoIrr.amount.amount == 0)
                             {
                                 //irrigate to given saturation
                                 if (soilSaturation < args.autoIrr.cutoff)

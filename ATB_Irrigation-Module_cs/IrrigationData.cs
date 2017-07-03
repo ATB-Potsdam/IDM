@@ -16,6 +16,38 @@ namespace atbApi
 {
     namespace data
     {
+        public class IrrigationWater
+        {
+            public double amount { get; set; }
+            public Double? ec { get; set; }
+            
+            public IrrigationWater(double amount = 0, Double? ec = null)
+            {
+                this.amount = amount;
+                this.ec = ec;
+            }
+        }
+
+        public class IrrigationAmount
+        {
+            public IrrigationWater surfaceWater { get; set; }
+            public IrrigationWater groundWater { get; set; }
+            public double amount
+            {
+                get
+                {
+                    return surfaceWater.amount + groundWater.amount;
+                }
+            }
+            public double ec
+            {
+                get
+                {
+                    return ((double)surfaceWater.ec * surfaceWater.amount + (double)groundWater.ec * groundWater.amount) / this.amount;
+                }
+            }
+        }
+        
         /*!
          *  \brief  class holding all values that determines an irrigation type.
          *
@@ -97,7 +129,7 @@ namespace atbApi
             /*! If "autoIrrigation" is used _and_ "autoIrrAmount" is 0 (automatic amount calculation), then the amount is calculated to saturate the soil right up to "autoIrrCutoff" value. If "autoIrrigation" is used _and_ "autoIrrAmount" is 0 _and_ "autoIrrLevel" is 0, then cutoff equation is "1 - pAdj - soilSaturation + autoIrrCutoff" */
             public double cutoff { get; set; }
             /*! If "autoIrrigation" is used, this amount of irrigation is added per day, if available soil water drops below "autoIrrLevel". If this value is 0, it is calculated by rule of "autoIrrCutoff" value */
-            public double amount { get; set; }
+            public IrrigationAmount amount { get; set; }
             /*! If "autoIrrigation" is used _and_ "autoIrrAmount" is 0 _and_ "autoIrrLevel" is 0, then irrigation is started at "1 - pAdj - autoIrrDeficit" */
             public double deficit { get; set; }
             /*! Parameters defining irrigation type. */
@@ -123,7 +155,7 @@ namespace atbApi
             public AutoIrrigationControl(
                 double level = 0,
                 double cutoff = 0.15,
-                double amount = 0,
+                IrrigationAmount amount = null,
                 double deficit = 0,
                 IrrigationType type = null,
                 Int32? startDay = null,
@@ -132,7 +164,7 @@ namespace atbApi
             {
                 this.level = level;
                 this.cutoff = cutoff;
-                this.amount = amount;
+                this.amount = amount == null ? new IrrigationAmount() : amount;
                 this.deficit = deficit;
                 this.type = type == null ? IrrigationTypes.sprinkler : type;
                 this.startDay = startDay;

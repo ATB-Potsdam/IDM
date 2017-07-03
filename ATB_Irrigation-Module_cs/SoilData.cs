@@ -33,10 +33,14 @@ namespace atbApi
             public double drRz { get; set; }
             /*! totally available water in the root zone */
             public Double? tawRz { get; set; }
+            /*! electrical conductivity in the root zone */
+            public Double? ecRz { get; set; }
             /*! drainage in the deep zone (below root zone up to 2m depth) */
             public double drDz { get; set; }
             /*! totally available water in the deep zone (below root zone up to 2m depth) */
             public Double? tawDz { get; set; }
+            /*! electrical conductivity in the deep zone (below root zone up to 2m depth) */
+            public Double? ecDz { get; set; }
             /*! drainage in the evaporation layer */
             public double de { get; set; }
             /*! percolation from the evaporation layer */
@@ -49,7 +53,17 @@ namespace atbApi
              *
              */
 
-            public SoilConditions(double drRz = 0.4, double drDz = 0.3, double de = 0.4, double dpe = 0.0, double zr = 0.3, Double? tawRz = null, Double? tawDz = null)
+            public SoilConditions(
+                double drRz = 0.4,
+                double drDz = 0.3,
+                double de = 0.4,
+                double dpe = 0.0,
+                double zr = 0.3,
+                Double? tawRz = null,
+                Double? tawDz = null,
+                Double? ecRz = null,
+                Double? ecDz = null
+            )
             {
                 this.drRz = drRz;
                 this.drDz = drDz;
@@ -58,6 +72,8 @@ namespace atbApi
                 this.zr = zr;
                 this.tawRz = tawRz;
                 this.tawDz = tawDz;
+                this.ecRz = ecRz;
+                this.ecDz = ecDz;
             }
 
             /*!
