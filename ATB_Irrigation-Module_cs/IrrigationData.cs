@@ -18,9 +18,18 @@ namespace atbApi
     {
         public class IrrigationWater
         {
+            /*! amount[mm], unit: "mm", description: The amount of irrigation water */
             public double amount { get; set; }
+            /*! ec[dS/m], unit: "dS/m", description: The amount of irrigation water */
             public Double? ec { get; set; }
-            
+
+            /*!
+             * \brief   default constructor.
+             *
+             * \param   amount  The amount, default: 0.
+             * \param   ec      The electrical conductivity, default null.
+             */
+
             public IrrigationWater(double amount = 0, Double? ec = null)
             {
                 this.amount = amount;
@@ -30,21 +39,54 @@ namespace atbApi
 
         public class IrrigationAmount
         {
+            /*! Variable that holds the amount and electrical conductivity of the irrigated surface water. */
             public IrrigationWater surfaceWater { get; set; }
+            /*! Variable that holds the amount and electrical conductivity of the irrigated ground water. */
             public IrrigationWater groundWater { get; set; }
+
+            /*!
+             * \brief   public readonly property to simple access the irrigation amount of both IrrigationWater types.
+             *
+             * \return  The sum of the amount.
+             */
             public double amount
             {
                 get
                 {
-                    return surfaceWater.amount + groundWater.amount;
+                    return (surfaceWater != null ? surfaceWater.amount : 0) + (groundWater != null ? groundWater.amount : 0);
                 }
             }
-            public double ec
+            /*!
+             * \brief   public readonly property to simple access the electrical conductivity of both IrrigationWater types.
+             *
+             * \return  The merged values of the ec.
+             */
+            public Double? ec
             {
                 get
                 {
+                    if (surfaceWater == null) return groundWater != null ? groundWater.ec : null;
+                    if (groundWater == null) return surfaceWater != null ? surfaceWater.ec : null;
+                    if (surfaceWater.ec == null) return groundWater.ec;
+                    if (groundWater.ec == null) return surfaceWater.ec;
+                    //both ec are defined, cast and calculate
                     return ((double)surfaceWater.ec * surfaceWater.amount + (double)groundWater.ec * groundWater.amount) / this.amount;
                 }
+            }
+
+            /*!
+             * \brief   Constructor with initial values for the amounts.
+             *
+             * \param   surfaceWaterAmount  The surface water amount.
+             * \param   groundWaterAmount   The ground water amount.
+             * \param   surfaceWaterEc      The surface water ec initial value, may be null.
+             * \param   groundWaterEc       The ground water ec initial value, may be null.
+             */
+
+            public IrrigationAmount(double surfaceWaterAmount = 0, double groundWaterAmount = 0, Double? surfaceWaterEc = null, Double? groundWaterEc = null)
+            {
+                surfaceWater = new IrrigationWater(amount: surfaceWaterAmount, ec: surfaceWaterEc);
+                groundWater = new IrrigationWater(amount: groundWaterAmount, ec: groundWaterEc);
             }
         }
         

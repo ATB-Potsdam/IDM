@@ -6,7 +6,7 @@
  * \author  Hunstock
  * \date    05.08.2015
  *
- * \mainpage    ATB Irrigation module overview
+ * \mainpage    Overview
  *
  * \section     intro_sec Introduction to the irrigation module
  *

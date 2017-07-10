@@ -105,7 +105,6 @@ namespace atbApi
         {
             private Stream plantDbFileStream;
             private IDictionary<String, Plant> plants = new Dictionary<String, Plant>();
-            private ICollection<String> names = new HashSet<String>();
             private IDictionary<String, IDictionary<int, PlantValues>> plantData = new Dictionary<String, IDictionary<int, PlantValues>>();
             private IDictionary<String, int> plantStagesLength = new Dictionary<String, int>();
             private IDictionary<String, int> initialEnd = new Dictionary<String, int>();

@@ -241,7 +241,7 @@ Public Class Form1
             'modify irrigation demand, here just divide by 2 as an example
             Dim resultKeys As List(Of String) = New List(Of String)(result.networkIdIrrigationDemand.Keys)
             For Each resultKey In resultKeys
-                result.networkIdIrrigationDemand(resultKey) /= 2
+                result.networkIdIrrigationDemand(resultKey).surfaceWater.amount /= 2
             Next
             'calculate again with real irrigation amount -> mbResult:=result, dryRun:=False
             result = cS.runCropSequence(start:=loopDate, end:=endDate, etArgs:=etArgs, irrigationAmount:=result, dryRun:=False)

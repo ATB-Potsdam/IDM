@@ -80,7 +80,7 @@ namespace atbApi
             /*! error, unit: "none", description: If an error occured during the calculation, this value is not null and contains an error description. */
             public String error { get; set; }
             /*! irrigation demand of all districts and fields */
-            public IDictionary<String, double> networkIdIrrigationDemand { get; set; }
+            public IDictionary<String, IrrigationAmount> networkIdIrrigationDemand { get; set; }
 
             /*!
              * Default constructor.
@@ -89,7 +89,7 @@ namespace atbApi
 
             public CropSequenceResult()
             {
-                networkIdIrrigationDemand = new Dictionary<String, double>();
+                networkIdIrrigationDemand = new Dictionary<String, IrrigationAmount>();
             }
         }
 
@@ -340,7 +340,8 @@ namespace atbApi
                 CropSequenceResult localMbResult = new CropSequenceResult();
                 if (irrigationAmount == null) irrigationAmount = new CropSequenceResult();
 
-                foreach (CropSequenceValues cs in getCropSequence(start))
+                IList<CropSequenceValues> csPart = getCropSequence(start);
+                foreach (CropSequenceValues cs in csPart)
                 {
                     String csIndex = cs.networkId + cs.fieldId;
 
@@ -349,7 +350,7 @@ namespace atbApi
                     tmpArgs.end = end;
                     if (tmpArgs.plant == null)
                     {
-                        //Debug.WriteLine("no plant for cropSequence: " + csIndex + " skipping sequence " + start.ToString());
+                        Debug.WriteLine("no plant for cropSequence: " + csIndex + " skipping sequence " + start.ToString());
                         continue;
                     }
 
@@ -377,7 +378,7 @@ namespace atbApi
                             TimeSpan scheduleLength = endMax.Subtract(startMin);
                             DateTime scheduleMid = startMin.AddMinutes(scheduleLength.TotalMinutes / 2);
                             if (tmpArgs.irrigationSchedule == null) tmpArgs.irrigationSchedule = new IrrigationSchedule(cs.irrigationType);
-                            tmpArgs.irrigationSchedule.schedule.Add(scheduleMid, irrigationAmount.networkIdIrrigationDemand[csIndex]);
+                            tmpArgs.irrigationSchedule.schedule.Add(scheduleMid, irrigationAmount.networkIdIrrigationDemand[csIndex].amount);
                         }
                         Transpiration.ETCalc(ref tmpArgs, ref tmpResult, dryRun);
                         _results[csIndex] = tmpResult;
@@ -385,11 +386,11 @@ namespace atbApi
 
                     if (localMbResult.networkIdIrrigationDemand.ContainsKey(csIndex))
                     {
-                        localMbResult.networkIdIrrigationDemand[csIndex] += tmpResult.autoNetIrrigation;
+                        localMbResult.networkIdIrrigationDemand[csIndex].surfaceWater.amount += tmpResult.autoNetIrrigation;
                     }
                     else
                     {
-                        localMbResult.networkIdIrrigationDemand[csIndex] = tmpResult.autoNetIrrigation;
+                        localMbResult.networkIdIrrigationDemand[csIndex] = new IrrigationAmount(surfaceWaterAmount: tmpResult.autoNetIrrigation);
                     }
 
                     localMbResult.error += tmpResult.error;
