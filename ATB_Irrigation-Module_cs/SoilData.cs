@@ -394,14 +394,12 @@ namespace atbApi
         {
             private static String soilDataResource = "local.IWRM_ATB-SoilData.csv.gz";
             private static Stream soilDbGzipFileStream = ResourceStream.GetResourceStream(soilDataResource);
-            private static Stream soilDbFileStream = new GZipStream(soilDbGzipFileStream, CompressionMode.Decompress);
 
-            private static readonly LocalSoilDb instance = new LocalSoilDb(soilDbFileStream);
+            private static readonly LocalSoilDb instance = new LocalSoilDb();
 
-            private LocalSoilDb(Stream soilDbFileStream)
-                : base(soilDbFileStream)
+            private LocalSoilDb()
+                : base(soilDbGzipFileStream)
             {
-                soilDbFileStream.Dispose();
                 soilDbGzipFileStream.Dispose();
             }
 

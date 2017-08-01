@@ -43,15 +43,59 @@ namespace atbApi
 
             protected void parseData(IDictionary<String, String> values, IDictionary<String, String> nameDict = null, PlantDb pdb = null, SoilDb sdb = null, ClimateDb cdb = null, CultureInfo cultureInfo = null)
             {
+                IEnumerable<PropertyInfo> piList = this.GetType().GetRuntimeProperties();
+
+                IList<String> propertyNames = new List<String>();
+                foreach (PropertyInfo pi in piList) propertyNames.Add(pi.Name);
+
+                IDictionary<String, IDictionary<String, String>> subObjects = new Dictionary<String, IDictionary<String, String>>();
+                foreach (String key in values.Keys)
+                {
+                    // Skip known properties
+                    if (propertyNames.Contains(key)) continue;
+                    
+                    if (key.Contains("."))
+                    {
+                        String[] parts = key.Split(".".ToCharArray(), 2);
+
+                        String subObjectName = parts[0];
+                        String subObjectProperty = parts[1];
+                        
+                        // FIXME: Raise error for empty parts
+                        if (
+                            String.IsNullOrWhiteSpace(subObjectName) ||
+                            String.IsNullOrWhiteSpace(subObjectProperty) ||
+                            subObjectName.Equals("_iterator") ||
+                            !propertyNames.Contains(subObjectName)
+                        ) continue;
+
+                        if (!subObjects.ContainsKey(subObjectName)) subObjects.Add(subObjectName, new Dictionary<String, String>());
+                        subObjects[subObjectName].Add(subObjectProperty, values[key]);
+                    }
+                }
+                foreach (String key in subObjects.Keys)
+                {
+                    PropertyInfo pi = this.GetType().GetRuntimeProperty(key);
+                    BaseValues instance = Activator.CreateInstance(pi.PropertyType) as BaseValues;
+
+                    // FIXME: Raise error on wrong object type
+                    if (instance == null) continue;
+                    
+                    instance.parseData(subObjects[key], nameDict, pdb, sdb, cdb, cultureInfo);
+                    pi.SetValue(this, instance, null);
+                }
+
                 //use this for .net 4.0
                 //foreach (PropertyInfo pi in this.GetType().GetProperties())
                 //use this for .net 4.5
-                foreach (PropertyInfo pi in this.GetType().GetRuntimeProperties())
+                foreach (PropertyInfo pi in piList)
                 {
                     //if (pi.GetGetMethod() == null || pi.GetSetMethod() == null) continue;
 
                     String name = nameDict != null && nameDict.ContainsKey(pi.Name) ? nameDict[pi.Name] : pi.Name;
                     if (!values.ContainsKey(name)) continue;
+
+                    propertyNames.Add(name);
 
                     String value = values[name];
                     if (String.IsNullOrWhiteSpace(value) || value.StartsWith("#NV")) continue;

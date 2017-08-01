@@ -11,6 +11,9 @@ using System;
 using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
+using System.Diagnostics;
 using Newtonsoft.Json;
 
 
@@ -142,5 +145,19 @@ namespace local
             for (var date = start; date <= end; date = date.AddYears(1))
                 yield return date;
         }
+    
+        internal static Stream TryUnzip(Stream fileStream)
+        {
+            Byte[] gzipSig = new Byte[3];
+            //read gzip signature 0x1F 0x8B 0x08
+            fileStream.Read(gzipSig, 0, gzipSig.Length);
+            //reset stream to begin
+            fileStream.Seek(0, SeekOrigin.Begin);
+            //check if stream has gzip signature und unzip it
+            if (System.Convert.ToBase64String(gzipSig).Equals("H4sI")) return new GZipStream(fileStream, CompressionMode.Decompress);
+            
+            return fileStream;
+        }
+
     }
 }

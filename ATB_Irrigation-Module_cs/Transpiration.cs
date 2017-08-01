@@ -535,11 +535,15 @@ namespace atbApi
                 if (args.lastConditions == null && result.lastConditions != null)
                 {
                     args.lastConditions = result.lastConditions;
+                    //continue calculation only if there are lastConditions
+                    return ETCalcLoop(ref args, ref result, stopWatch, keepDailyValues, dryRun);
                 }
-                return ETCalcLoop(ref args, ref result, stopWatch, keepDailyValues, dryRun);
+            }
+            else
+            {
+                result = new ETResult();
             }
 
-            result = new ETResult();
             result.error = ETTools.CheckArgs(ref args);
             if (result.error != null) return false;
 

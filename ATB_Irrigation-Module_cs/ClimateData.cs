@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Reflection;
 
 using local;
@@ -225,7 +226,8 @@ namespace atbApi
             /*!
              * \brief   Function to load external csv-File as new climate into the database.
              *
-             * \param   climateFileStream   A file stream to read csv data from.
+             * \param   climateFileStream   A file stream to read csv data from. It is automatically determined, if the data is gzipped.
+             *                              In this case the stream is internally unzipped.
              * \param   step                Data in csv-file is organized in this timestep.
              * \param   cultureInfo         Information describing the culture.
              *
@@ -248,9 +250,9 @@ namespace atbApi
              * \endcode
              */
 
-            public int addClimate(Stream climateFileStream, TimeStep step, CultureInfo cultureInfo = null)
+            public int addClimate(Stream climateFileStream, TimeStep step, CultureInfo cultureInfo = null, Boolean gzipped = false)
             {
-                Climate _climate = new Climate(climateFileStream, step, cultureInfo);
+                Climate _climate = new Climate(climateFileStream, step, cultureInfo: cultureInfo);
                 climates[_climate.name] = _climate;
                 return climates.Count;
             }
@@ -278,6 +280,9 @@ namespace atbApi
         {
             /*! vector with data. */
             private IDictionary<DateTime, ClimateValues> climateData = new Dictionary<DateTime, ClimateValues>();
+            /*! vector with rain pattern. */
+            //TODO: load rain pattern
+            //private RainPattern rainPattern;
             private String _name;
             private String _dataObjId;
             private Location _location;
@@ -345,7 +350,7 @@ namespace atbApi
              * \param   step                incremental time step of the data
              */
 
-            public Climate(Stream climateFileStream, TimeStep step, CultureInfo cultureInfo = null)
+            public Climate(Stream climateFileStream, TimeStep step, Stream rainPatternFileStream = null, CultureInfo cultureInfo = null)
             {
                 _step = step;
                 _cultureInfo = cultureInfo;

@@ -4,7 +4,7 @@
  * \brief	Class file for irrigation types and values
  *
  * \author	Hunstock
- * \date     15.08.2015
+ * \date    15.08.2015
  */
 
 using System;
@@ -16,7 +16,11 @@ namespace atbApi
 {
     namespace data
     {
-        public class IrrigationWater
+        /*!
+         * \brief   Class that holds amount and salinity of irrigated water. Future class variables can be easily added.
+         */
+
+        public class IrrigationWater : BaseValues
         {
             /*! amount[mm], unit: "mm", description: The amount of irrigation water */
             public double amount { get; set; }
@@ -37,7 +41,16 @@ namespace atbApi
             }
         }
 
-        public class IrrigationAmount
+        /*!
+         * \brief   The irrigation amount class.
+         *          Aggregates actually two irrigation water sources:
+         *          - surfaceWater
+         *          - groundWater
+         *
+         *          Future irrigation water sources can be added.
+         */
+
+        public class IrrigationAmount : BaseValues
         {
             /*! Variable that holds the amount and electrical conductivity of the irrigated surface water. */
             public IrrigationWater surfaceWater { get; set; }
@@ -95,24 +108,18 @@ namespace atbApi
          *
          */
 
-        public class IrrigationType
+        public class IrrigationType : BaseValues
         {
-            private double _fw;
-            private double _interception;
-            private String _name;
-            private double _min;
-            private double _max;
-
             /*! readonly property: fraction of wetted surface for irrigation method, between 0.3 (30% wetted surface for drip) up to 1 (100% for sprinkler) */
-            public double fw { get { return this._fw; } }
+            public readonly double fw;
             /*! readonly property: interception as result of the method, if leafs are not wetted (for instance drip irrigation), this value is 0 */
-            public double interception { get { return this._interception; } }
+            public readonly double interception;
             /*! readonly property: name of the irrigation method */
-            public String name { get { return this._name; } }
+            public readonly String name;
             /*! readonly property: minimum irrigation application per day */
-            public double min { get { return this._min; } }
+            public readonly double min;
             /*! readonly property: maximum irrigation application per day */
-            public double max { get { return this._max; } }
+            public readonly double max;
 
             /*!
              * \brief   Constructor for new struct, all values must be provided.
@@ -127,11 +134,11 @@ namespace atbApi
 
             public IrrigationType(double fw = 1, double interception = 1, String name = "sprinkler", double min = 0, double max = 0)
             {
-                this._fw = fw;
-                this._interception = interception;
-                this._name = name;
-                this._min = min;
-                this._max = max;
+                this.fw = fw;
+                this.interception = interception;
+                this.name = name;
+                this.min = min;
+                this.max = max;
             }
         }
 
@@ -164,7 +171,7 @@ namespace atbApi
          *
          */
 
-        public class AutoIrrigationControl
+        public class AutoIrrigationControl : BaseValues
         {
             /*! If "autoIrrigation" is used, it will start at this fraction of available water (0.8 means 80%). If this value is 0, irrigations starts if saturation drops below "1 - pAdj" level */
             public double level { get; set; }
@@ -212,6 +219,10 @@ namespace atbApi
                 this.startDay = startDay;
                 this.endDay = endDay;
             }
+            public AutoIrrigationControl()
+                : this(level: 0)
+            {
+            }
         }
 
 
@@ -220,7 +231,7 @@ namespace atbApi
          *
          */
 
-        public class IrrigationSchedule
+        public class IrrigationSchedule : BaseValues
         {
             /*! Irrigation schedule as HashMap of Dates and irrigation amounts in mm */
             public IDictionary<DateTime, double> schedule { get; set; }

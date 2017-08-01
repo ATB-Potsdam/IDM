@@ -32,7 +32,7 @@ namespace local
 
         internal CsvReader(Stream stream)
         {
-            this.stream = new StreamReader(stream);
+            this.stream = new StreamReader(Tools.TryUnzip(stream));
             fieldNames = parseLine();
         }
 

@@ -232,14 +232,12 @@ namespace atbApi
             //plant data for IWRM version
             private static String plantDataResource = "local.IWRM_ALL-PlantData.csv.gz";
             private static Stream plantDbGzipFileStream = ResourceStream.GetResourceStream(plantDataResource);
-            private static Stream plantDbFileStream = new GZipStream(plantDbGzipFileStream, CompressionMode.Decompress);
 
-            private static readonly LocalPlantDb instance = new LocalPlantDb(plantDbFileStream, plantDbGzipFileStream);
+            private static readonly LocalPlantDb instance = new LocalPlantDb();
 
-            private LocalPlantDb(Stream plantDbFileStream, Stream plantDbGzipFileStream)
-                : base(plantDbFileStream)
+            private LocalPlantDb()
+                : base(plantDbGzipFileStream)
             {
-                plantDbFileStream.Dispose();
                 plantDbGzipFileStream.Dispose();
             }
 

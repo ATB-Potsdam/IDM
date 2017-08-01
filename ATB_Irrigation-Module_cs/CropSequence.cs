@@ -48,6 +48,21 @@ namespace atbApi
             public IrrigationType irrigationType { get; set; }
             /*! the field size */
             public double area { get; set; }
+            /*! the rain pattern associated with the cropSequence to be used for distributing monthly rain sum to daily events */
+            public String rainPattern { get; set; }
+            /*! the water rigths, not internal used, relayed to caller to apply irrigation according to rights */
+            public int waterRights { get; set; }
+            /*! parameters to control autoIrrigation, see class documentation for details */
+            public AutoIrrigationControl autoIrrigation { get; set; }
+            /*! initial salinity of the root zone */
+            public double salinityRzInitial { get; set; }
+            /*! initial salinity of the root zone */
+            public double salinityDzInitial { get; set; }
+            /*! depletionRz The initial depletion in the root zone */
+            public double depletionRzInitial { get; set; }
+            /*! depletionDz The initial depletion in the zone under root up to 2m */
+            public double depletionDzInitial { get; set; }
+
 
             private static IDictionary<String, String> propertyMapper = new Dictionary<String, String>();
 
@@ -184,7 +199,8 @@ namespace atbApi
             /*!
              * \brief   Constructor to create the crop sequence and immediate load data from provided fileStream.
              *
-             * \param   cropSequenceFileStream  File stream with csv data to load.
+             * \param   cropSequenceFileStream  File stream with csv data to load. It is automatically determined, if the data is gzipped.
+             *                                  In this case the stream is internally unzipped.
              * \param   plantDb                 The plant database.
              * \param   soilDb                  The soil database.
              * \param   climateDb               The climate database.
@@ -313,6 +329,7 @@ namespace atbApi
                 result.soil = cs.soil;
                 result.seedDate = cs.seedDate;
                 result.harvestDate = cs.harvestDate;
+                if (cs.autoIrrigation != null) result.autoIrr = cs.autoIrrigation;
                 return result;
             }
 
@@ -343,7 +360,7 @@ namespace atbApi
                 IList<CropSequenceValues> csPart = getCropSequence(start);
                 foreach (CropSequenceValues cs in csPart)
                 {
-                    String csIndex = cs.networkId + cs.fieldId;
+                    String csIndex = cs.networkId + '.' + cs.waterRights + '.' + cs.fieldId;
 
                     ETArgs tmpArgs = MergeArgs(ref etArgs, cs);
                     tmpArgs.start = start;
@@ -402,7 +419,7 @@ namespace atbApi
                 String elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:000}",
                     ts.Hours, ts.Minutes, ts.Seconds,
                     ts.Milliseconds);
-                Debug.WriteLine("runCropSequence took " + elapsedTime);
+                Debug.WriteLine("runCropSequence took " + elapsedTime + " start: " + start.ToString("yyyy-MM-dd") + " end: " + end.ToString("yyyy-MM-dd"));
                 localMbResult.runtimeMs = stopWatch.ElapsedMilliseconds;
 
                 return localMbResult;

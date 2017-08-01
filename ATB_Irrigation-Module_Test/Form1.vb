@@ -207,6 +207,7 @@ Public Class Form1
         'transpiration calc DHI
         'create CultureInfo for english formatted csv data
         Dim cultureInfoEn As CultureInfo = New CultureInfo("en-US")
+        Dim cultureInfoDe As CultureInfo = New CultureInfo("de-DE")
         'create empty climateDb
         Dim climateDb As atbApi.data.ClimateDb = New atbApi.data.ClimateDb()
         'load 6 climate stations which are referenced in the cropSequence
@@ -216,17 +217,26 @@ Public Class Form1
             'load climate data from file into ram, TimeStep is required to convert monthly sums to daily values
             climateDb.addClimate(climateStream, atbApi.data.TimeStep.month, cultureInfoEn)
         Next
+        'additionally load synoptic climate stations which are referenced in the cropSequence
+        For Each climateFile In Directory.GetFiles("..\..\..\testdata", "IRAN_?????_*")
+            Dim climateStream As FileStream = File.OpenRead(climateFile)
+            If climateFile.EndsWith(".csv", StringComparison.InvariantCulture) Or climateFile.EndsWith(".gz", StringComparison.InvariantCulture) Then
+                'load climate data from file into ram
+                climateDb.addClimate(climateStream, atbApi.data.TimeStep.day, cultureInfoEn)
+            End If
+        Next
 
         'example cropSequence 1000 years from 1901 to 2900
-        Dim cSFile = "..\..\..\testdata\DHI_Field_IWRM_cropSequences_example_Updated_Vgl_hj.csv"
+        Dim cSFile = "..\..\..\testdata\IWRM_cropSequence_Scenario_1_1000years.csv.gz"
+        'Dim cSFile = "..\..\..\testdata\DHI_Field_IWRM_cropSequences_example_Updated_Vgl_hj.csv"
         Dim cSStream As FileStream = File.OpenRead(cSFile)
         'create cropSequence, use builtin plant and soil db and before created climate db
         Dim cS As atbApi.data.CropSequence = _
-            New atbApi.data.CropSequence(cSStream, atbApi.data.LocalPlantDb.Instance, atbApi.data.LocalSoilDb.Instance, climateDb, cultureInfoEn)
+            New atbApi.data.CropSequence(cSStream, atbApi.data.LocalPlantDb.Instance, atbApi.data.LocalSoilDb.Instance, climateDb, cultureInfoDe)
 
         'common arguments for all calculations
         Dim etArgs As New atbApi.ETArgs()
-        'create autoIrrigation parameters
+        'create autoIrrigation parameters unnessecary, now contained in cropSequence
         etArgs.autoIrr = New atbApi.data.AutoIrrigationControl(level:=0, cutoff:=0.15, deficit:=0.2)
         'loop over 1000 years
         Dim loopDate As DateTime = New DateTime(1901, 1, 1, 0, 0, 0, DateTimeKind.Utc)
