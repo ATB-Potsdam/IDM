@@ -27,7 +27,6 @@ namespace atbApi
         /*!
         * \brief	defines a collection of rainPattern values.
         *
-        * \remarks	if "mean_temp" is ommitted, <c>max_temp + min_temp / 2</c> is used.
         */
 
         public class RainPatternValues : BaseValues
@@ -82,27 +81,6 @@ namespace atbApi
                     if (rainPatternValues.GetType().GetRuntimeProperty(pi.Name) == null) continue;
                     pi.SetValue(this, rainPatternValues.GetType().GetRuntimeProperty(pi.Name).GetValue(rainPatternValues, null), null);
                 }
-            }
-        }
-
-        /*!
-         * \brief   The RainPattern real pattern as fraction of monthly precipitation mapped to day
-         *
-         */
-
-        public class ___RainPatternPattern : BaseValues
-        {
-            /*! pattern as HashMap of day of month and fraction of monthly amount */
-            public IDictionary<int, double> data { get; set; }
-
-            /*!
-             * \brief   Default constructor, initializes dictionary
-             *
-             */
-
-            public ___RainPatternPattern()
-            {
-                data = new Dictionary<int, double>();
             }
         }
 
@@ -215,7 +193,6 @@ namespace atbApi
              * \brief   Constructor to create rainPattern and immediate load data from provided fileStream.
              *
              * \param   rainPatternFileStream   File stream with csv data to load. The name, location and altitude are taken from this data.
-             * \param   step                incremental time step of the data
              */
 
             public RainPattern(Stream rainPatternFileStream, CultureInfo cultureInfo = null)
@@ -267,9 +244,11 @@ namespace atbApi
             /*!
              * \brief   Add values for a given month and sum.
              *
-             * \param   date The date to set data for. It is adjusted to next lower bound of the timestep
+             * \param   month   The when rainPattern occurs
+             * \param   sum     The sum of this particular month sample
              * \param   values  The rainPattern values.
-             * \result  number of datasets
+             *
+             * \return  number of datasets.
              */
 
             public int addValues(int month, Double sum, RainPatternValues values)
@@ -285,7 +264,7 @@ namespace atbApi
 
 
             /*!
-             * \brief   Get value for a given date.
+             * \brief   Get value for a given date and find pattern for best matching sum
              *
              * \param   date The date to get data for. Only month and day of month are extracted
              * \param   sum needed to find best match of monthly rainPattern sum.

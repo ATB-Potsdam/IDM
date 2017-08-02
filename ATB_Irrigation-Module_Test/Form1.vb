@@ -251,7 +251,7 @@ Public Class Form1
         etArgs.autoIrr = New atbApi.data.AutoIrrigationControl(level:=0, cutoff:=0.15, deficit:=0.2)
         'loop over 1000 years
         Dim loopDate As DateTime = New DateTime(1901, 1, 1, 0, 0, 0, DateTimeKind.Utc)
-        Dim loopEnd As DateTime = New DateTime(1902, 12, 31, 0, 0, 0, DateTimeKind.Utc)
+        Dim loopEnd As DateTime = New DateTime(2900, 12, 31, 0, 0, 0, DateTimeKind.Utc)
         Dim result As atbApi.data.CropSequenceResult
 
         Do
@@ -271,7 +271,8 @@ Public Class Form1
         Loop While loopDate < loopEnd
 
         For Each item In result.networkIdIrrigationDemand
-            TextBox1.AppendText(item.Key + ": autoNetIrr: " + item.Value.ToString() + vbNewLine)
+            Dim networkRightField As Array = item.Key.Split(".")
+            TextBox1.AppendText("network: " + networkRightField(0) + " right: " + networkRightField(1) + "fieldId: " + networkRightField(2) + " autoNetIrr: " + item.Value.amount.ToString() + vbNewLine)
         Next
     End Sub
 End Class
