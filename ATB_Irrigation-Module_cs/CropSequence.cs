@@ -49,7 +49,7 @@ namespace atbApi
             /*! the field size */
             public double area { get; set; }
             /*! the rain pattern associated with the cropSequence to be used for distributing monthly rain sum to daily events */
-            public String rainPattern { get; set; }
+            public RainPattern rainPattern { get; set; }
             /*! the water rigths, not internal used, relayed to caller to apply irrigation according to rights */
             public int waterRights { get; set; }
             /*! parameters to control autoIrrigation, see class documentation for details */
@@ -64,7 +64,7 @@ namespace atbApi
             public double depletionDzInitial { get; set; }
 
 
-            private static IDictionary<String, String> propertyMapper = new Dictionary<String, String>();
+            private IDictionary<String, String> propertyMapper = new Dictionary<String, String>();
 
             /*!
              * \brief   Parse data, iterates through all properties with getter and setter and tries to set with
@@ -74,9 +74,13 @@ namespace atbApi
              * \param   cultureInfo Information to parse data in different localized formats
              */
 
-            public void parseData(IDictionary<String, String> values, CultureInfo cultureInfo = null, PlantDb pdb = null, SoilDb sdb = null, ClimateDb cdb = null)
+            public void parseData(IDictionary<String, String> values, CultureInfo cultureInfo = null, PlantDb pdb = null, SoilDb sdb = null, ClimateDb cdb = null, RainPatternDb rpdb = null)
             {
-                base.parseData(values, propertyMapper, cultureInfo: cultureInfo, pdb: pdb, sdb: sdb, cdb: cdb);
+                base.parseData(values, propertyMapper, cultureInfo: cultureInfo, pdb: pdb, sdb: sdb, cdb: cdb, rpdb: rpdb);
+                if (climate != null && rainPattern != null)
+                {
+                    climate.rainPattern = rainPattern;
+                }
             }
         }
 
@@ -126,6 +130,7 @@ namespace atbApi
             private PlantDb _plantDb;
             private SoilDb _soilDb;
             private ClimateDb _climateDb;
+            private RainPatternDb _rainPatternDb;
             private Exception _e;
             private DateTime? _start;
             private DateTime? _end;
@@ -175,6 +180,13 @@ namespace atbApi
             public ClimateDb climateDb { get { return this._climateDb; } }
 
             /*!
+             * \brief   public readonly property to access the rainPatternDb
+             *
+             * \return  The rainPatternDb in use.
+             */
+            public RainPatternDb rainPatternDb { get { return this._rainPatternDb; } }
+
+            /*!
              * \brief   public readonly property to access the detailed results
              *
              * \return  The results of all calculations
@@ -207,10 +219,11 @@ namespace atbApi
              * \param   cultureInfo             Information to parse data in different localized formats
              */
 
-            public CropSequence(Stream cropSequenceFileStream, PlantDb plantDb, SoilDb soilDb, ClimateDb climateDb, CultureInfo cultureInfo = null)
+            public CropSequence(Stream cropSequenceFileStream, PlantDb plantDb, SoilDb soilDb, ClimateDb climateDb, RainPatternDb rainPatternDb, CultureInfo cultureInfo = null)
             {
                 _plantDb = plantDb;
                 _climateDb = climateDb;
+                _rainPatternDb = rainPatternDb;
                 _soilDb = soilDb;
                 _cultureInfo = cultureInfo;
                 loadCsv(cropSequenceFileStream);
@@ -240,7 +253,7 @@ namespace atbApi
                         //catch parse exception and continue reading file
                         try
                         {
-                            values.parseData(fields, _cultureInfo == null ? CultureInfo.InvariantCulture : _cultureInfo, pdb: plantDb, sdb: soilDb, cdb: climateDb);
+                            values.parseData(fields, _cultureInfo == null ? CultureInfo.InvariantCulture : _cultureInfo, pdb: plantDb, sdb: soilDb, cdb: climateDb, rpdb: rainPatternDb);
                         }
                         catch (Exception e)
                         {

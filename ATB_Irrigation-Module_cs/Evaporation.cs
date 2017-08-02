@@ -144,7 +144,8 @@ namespace atbApi
             var e = ke * et0;
             e = e * eFactor;
             eResult.e = e;
-            var netPrecititationTc = (double)climateSet.precipitation - interception + netIrrigation - interceptionIrr + autoNetIrrigation - interceptionAutoIrr;
+            var rpPrecipitation = climateSet.rpPrecipitation != null ? (double)climateSet.rpPrecipitation : (double)climateSet.precipitation;
+            var netPrecititationTc = rpPrecipitation - interception + netIrrigation - interceptionIrr + autoNetIrrigation - interceptionAutoIrr;
             var dpe = netPrecititationTc - lastConditions.de;
             dpe = Math.Max(0, dpe);
             var de = lastConditions.de - netPrecititationTc + e / few + dpe;

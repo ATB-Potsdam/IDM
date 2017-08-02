@@ -68,8 +68,10 @@ namespace atbApi
             public Double? air_pressure { get; set; }
             /*! vapour pressure [hPa] optional value. */
             public Double? vapour_pressure { get; set; }
+            /*! rainpattern corrected precipitation [mm]. */
+            public Double? rpPrecipitation { get; set; }
 
-            private static IDictionary<String, String> propertyMapper = new Dictionary<String, String>();
+            private IDictionary<String, String> propertyMapper = new Dictionary<String, String>();
 
             /*!
              * \brief   Default constructor.
@@ -250,7 +252,7 @@ namespace atbApi
              * \endcode
              */
 
-            public int addClimate(Stream climateFileStream, TimeStep step, CultureInfo cultureInfo = null, Boolean gzipped = false)
+            public int addClimate(Stream climateFileStream, TimeStep step, CultureInfo cultureInfo = null)
             {
                 Climate _climate = new Climate(climateFileStream, step, cultureInfo: cultureInfo);
                 climates[_climate.name] = _climate;
@@ -280,9 +282,8 @@ namespace atbApi
         {
             /*! vector with data. */
             private IDictionary<DateTime, ClimateValues> climateData = new Dictionary<DateTime, ClimateValues>();
-            /*! vector with rain pattern. */
-            //TODO: load rain pattern
-            //private RainPattern rainPattern;
+            /*! class with rain pattern, must be public to set Rainpattern from CropSequence after Climate is initialized */
+            public RainPattern rainPattern;
             private String _name;
             private String _dataObjId;
             private Location _location;
@@ -350,7 +351,7 @@ namespace atbApi
              * \param   step                incremental time step of the data
              */
 
-            public Climate(Stream climateFileStream, TimeStep step, Stream rainPatternFileStream = null, CultureInfo cultureInfo = null)
+            public Climate(Stream climateFileStream, TimeStep step, CultureInfo cultureInfo = null)
             {
                 _step = step;
                 _cultureInfo = cultureInfo;
@@ -521,7 +522,6 @@ namespace atbApi
              * \brief   Get values for a given date.
              *
              * \param   date The date to get data for. It is adjusted to next lower bound of the timestep
-             * \param   wantStep For automatic conversions of provided and needed data TimeSteps this argument is used.
              *
              * \return  The values if available for requested date, else null is returned.
              */
@@ -533,7 +533,13 @@ namespace atbApi
                 ClimateValues resultSet;
                 DateTime adjustedDate = Tools.AdjustTimeStep(date, this.step);
                 climateData.TryGetValue(adjustedDate, out resultSet);
+                resultSet.rpPrecipitation = resultSet.precipitation;
 
+                if (_step == TimeStep.month && rainPattern != null && resultSet.precipitation != null)
+                {
+                    Double? precipitation = rainPattern.getValue(date, (double)resultSet.precipitation * DateTime.DaysInMonth(date.Year, date.Month));
+                    if (precipitation != null) resultSet.rpPrecipitation = precipitation;
+                }
                 return resultSet;
             }
         }

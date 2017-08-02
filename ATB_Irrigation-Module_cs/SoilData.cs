@@ -256,7 +256,7 @@ namespace atbApi
             /*! humus content [%] */
             public double humus { get; set; }
 
-            private static IDictionary<String, String> propertyMapper = new Dictionary<String, String>();
+            private IDictionary<String, String> propertyMapper = new Dictionary<String, String>();
 
             /*!
              * \brief   Default static constructor.

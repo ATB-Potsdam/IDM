@@ -205,7 +205,7 @@ Public Class Form1
 
     Private Sub Button9_Click(sender As Object, e As EventArgs) Handles Button9.Click
         'transpiration calc DHI
-        'create CultureInfo for english formatted csv data
+        'create CultureInfo for english ans german formatted csv data
         Dim cultureInfoEn As CultureInfo = New CultureInfo("en-US")
         Dim cultureInfoDe As CultureInfo = New CultureInfo("de-DE")
         'create empty climateDb
@@ -218,7 +218,7 @@ Public Class Form1
             climateDb.addClimate(climateStream, atbApi.data.TimeStep.month, cultureInfoEn)
         Next
         'additionally load synoptic climate stations which are referenced in the cropSequence
-        For Each climateFile In Directory.GetFiles("..\..\..\testdata", "IRAN_?????_*")
+        For Each climateFile In Directory.GetFiles("..\..\..\testdata", "IRAN_?????_*.date*")
             Dim climateStream As FileStream = File.OpenRead(climateFile)
             If climateFile.EndsWith(".csv", StringComparison.InvariantCulture) Or climateFile.EndsWith(".gz", StringComparison.InvariantCulture) Then
                 'load climate data from file into ram
@@ -226,13 +226,24 @@ Public Class Form1
             End If
         Next
 
-        'example cropSequence 1000 years from 1901 to 2900
+        'create empty rainPatternDb
+        Dim rainPatternDb As atbApi.data.RainPatternDb = New atbApi.data.RainPatternDb()
+        'additionally load rain pattern which are referenced in the cropSequence
+        For Each rainPatternFile In Directory.GetFiles("..\..\..\testdata", "IRAN_?????_*_rainPattern*")
+            Dim rainPatternStream As FileStream = File.OpenRead(rainPatternFile)
+            If rainPatternFile.EndsWith(".csv", StringComparison.InvariantCulture) Or rainPatternFile.EndsWith(".gz", StringComparison.InvariantCulture) Then
+                'load rainPattern data from file into ram
+                rainPatternDb.addRainPattern(rainPatternStream, cultureInfoEn)
+            End If
+        Next
+
+        'cropSequence 1000 years from 1901 to 2900
         Dim cSFile = "..\..\..\testdata\IWRM_cropSequence_Scenario_1_1000years.csv.gz"
-        'Dim cSFile = "..\..\..\testdata\DHI_Field_IWRM_cropSequences_example_Updated_Vgl_hj.csv"
+        'Dim cSFile = "..\..\..\testdata\IWRM_cropSequence_Scenario_1.csv"
         Dim cSStream As FileStream = File.OpenRead(cSFile)
         'create cropSequence, use builtin plant and soil db and before created climate db
         Dim cS As atbApi.data.CropSequence = _
-            New atbApi.data.CropSequence(cSStream, atbApi.data.LocalPlantDb.Instance, atbApi.data.LocalSoilDb.Instance, climateDb, cultureInfoDe)
+            New atbApi.data.CropSequence(cSStream, atbApi.data.LocalPlantDb.Instance, atbApi.data.LocalSoilDb.Instance, climateDb, rainPatternDb, cultureInfoDe)
 
         'common arguments for all calculations
         Dim etArgs As New atbApi.ETArgs()
@@ -240,7 +251,7 @@ Public Class Form1
         etArgs.autoIrr = New atbApi.data.AutoIrrigationControl(level:=0, cutoff:=0.15, deficit:=0.2)
         'loop over 1000 years
         Dim loopDate As DateTime = New DateTime(1901, 1, 1, 0, 0, 0, DateTimeKind.Utc)
-        Dim loopEnd As DateTime = New DateTime(2900, 12, 31, 0, 0, 0, DateTimeKind.Utc)
+        Dim loopEnd As DateTime = New DateTime(1902, 12, 31, 0, 0, 0, DateTimeKind.Utc)
         Dim result As atbApi.data.CropSequenceResult
 
         Do

@@ -612,8 +612,16 @@ namespace atbApi
                 loopResult.irrigation = 0.0;
                 loopResult.netIrrigation = 0.0;
                 var irrigationType = args.irrigationSchedule != null ? args.irrigationSchedule.type : args.autoIrr != null ? args.autoIrr.type : IrrigationTypes.sprinkler;
-                loopResult.irrigationFw = irrigationType.fw;
-                result.irrigationFw = irrigationType.fw;
+                if (irrigationType != null) {
+                    loopResult.irrigationFw = irrigationType.fw;
+                    result.autoIrrigationFw = irrigationType.fw;
+                    result.irrigationFw = irrigationType.fw;
+                }
+                else {
+                    loopResult.irrigationFw = 1;
+                    result.autoIrrigationFw = 1;
+                    result.irrigationFw = 1;
+                }
                 loopResult.autoIrrigation = 0.0;
                 loopResult.autoNetIrrigation = 0.0;
 
@@ -643,7 +651,7 @@ namespace atbApi
                     double _irrigation;
                     args.irrigationSchedule.schedule.TryGetValue(loopDate, out _irrigation);
                     loopResult.irrigation = _irrigation;
-                    loopResult.irrigationFw = args.irrigationSchedule.type.fw;
+                    loopResult.irrigationFw = args.irrigationSchedule.type != null ? args.irrigationSchedule.type.fw : 1;
                     loopResult.netIrrigation = loopResult.irrigation * loopResult.irrigationFw;
                 }
 
@@ -701,11 +709,12 @@ namespace atbApi
                     }
                 }
 
+                var rpPrecipitation = climateSet.rpPrecipitation != null ? (double)climateSet.rpPrecipitation : (double)climateSet.precipitation;
                 //calculate interception for irrigation for auto and data based irrigation
                 loopResult.interception = 0.0;
                 if (plantSet.LAI != 0 && args.a != 0)
                 {
-                    loopResult.interception = args.a * (double)plantSet.LAI * (1 - 1 / (1 + (cf * (double)climateSet.precipitation) / (args.a * (double)plantSet.LAI)));
+                    loopResult.interception = args.a * (double)plantSet.LAI * (1 - 1 / (1 + (cf * rpPrecipitation) / (args.a * (double)plantSet.LAI)));
                     loopResult.interceptionIrr = args.a * (double)plantSet.LAI * (1 - 1 / (1 + (cf * loopResult.netIrrigation) / (args.a * (double)plantSet.LAI)));
                     loopResult.interceptionIrr = args.irrigationSchedule != null && args.irrigationSchedule.type != null ? loopResult.interceptionIrr * args.irrigationSchedule.type.interception : 0.0;
                     loopResult.interceptionAutoIrr = args.a * (double)plantSet.LAI * (1 - 1 / (1 + (cf * loopResult.autoNetIrrigation) / (args.a * (double)plantSet.LAI)));
@@ -715,7 +724,7 @@ namespace atbApi
                 //calculate netPrecipitation for Etc/Tc
                 loopResult.netPrecipitation =
                     Math.Max(0,
-                        (double)climateSet.precipitation
+                        rpPrecipitation
                         - loopResult.interception
                         + loopResult.netIrrigation
                         - loopResult.interceptionIrr
@@ -726,7 +735,7 @@ namespace atbApi
                 loopResult.plantDay = (int)plantDay;
                 loopResult.plantZr = zr;
                 loopResult.plantStage = stageName;
-                loopResult.precipitation = (double)climateSet.precipitation;
+                loopResult.precipitation = rpPrecipitation;
                 loopResult.tawRz = tawRz;
                 loopResult.tawDz = tawDz;
                 loopResult.raw = tawRz * loopResult.pAdj;
@@ -836,9 +845,9 @@ namespace atbApi
                 }
 
                 //calculate precipitation/irrigation efficiency
-                if ((climateSet.precipitation + loopResult.netIrrigation + loopResult.autoNetIrrigation) > 0)
+                if ((rpPrecipitation + loopResult.netIrrigation + loopResult.autoNetIrrigation) > 0)
                 {
-                    loopResult.precIrrEff = (loopResult.netPrecipitation - loopResult.dpDz) / ((double)climateSet.precipitation + loopResult.netIrrigation + loopResult.autoNetIrrigation);
+                    loopResult.precIrrEff = (loopResult.netPrecipitation - loopResult.dpDz) / (rpPrecipitation + loopResult.netIrrigation + loopResult.autoNetIrrigation);
 
                     //calculate soil water storage efficiency
                     if (Math.Round(args.lastConditions.drRz, 5, MidpointRounding.AwayFromZero) == 0.0)

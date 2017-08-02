@@ -41,7 +41,7 @@ namespace atbApi
              * \param   cultureInfo Information to parse data in different localized formats
              */
 
-            protected void parseData(IDictionary<String, String> values, IDictionary<String, String> nameDict = null, PlantDb pdb = null, SoilDb sdb = null, ClimateDb cdb = null, CultureInfo cultureInfo = null)
+            protected void parseData(IDictionary<String, String> values, IDictionary<String, String> nameDict = null, PlantDb pdb = null, SoilDb sdb = null, ClimateDb cdb = null, RainPatternDb rpdb = null, CultureInfo cultureInfo = null)
             {
                 IEnumerable<PropertyInfo> piList = this.GetType().GetRuntimeProperties();
 
@@ -73,16 +73,46 @@ namespace atbApi
                         subObjects[subObjectName].Add(subObjectProperty, values[key]);
                     }
                 }
-                foreach (String key in subObjects.Keys)
+                foreach (String subObjName in subObjects.Keys)
                 {
-                    PropertyInfo pi = this.GetType().GetRuntimeProperty(key);
-                    BaseValues instance = Activator.CreateInstance(pi.PropertyType) as BaseValues;
+                    PropertyInfo pi = this.GetType().GetRuntimeProperty(subObjName);
 
-                    // FIXME: Raise error on wrong object type
-                    if (instance == null) continue;
-                    
-                    instance.parseData(subObjects[key], nameDict, pdb, sdb, cdb, cultureInfo);
-                    pi.SetValue(this, instance, null);
+                    if (pi.PropertyType.IsArray)
+                    {
+                        Type arrayType = pi.PropertyType.GetElementType();
+                        List<int> indexes = subObjects[subObjName].Keys.Select(Int32.Parse).ToList();
+                        Array arrayInstance = Array.CreateInstance(arrayType, indexes.Max() + 1);
+
+                        foreach (int index in indexes)
+                        {
+                            if (String.IsNullOrEmpty(subObjects[subObjName][index.ToString()])) continue;
+
+                            if (arrayType == typeof(String))
+                            {
+                                arrayInstance.SetValue(subObjects[subObjName][index.ToString()], index);
+                            }
+                            else if (arrayType == typeof(Double))
+                            {
+                                arrayInstance.SetValue(Double.Parse(subObjects[subObjName][index.ToString()], cultureInfo != null ? cultureInfo : CultureInfo.InvariantCulture), index);
+                            }
+                            else if (arrayType == typeof(int) || arrayType == typeof(Int16) || arrayType == typeof(Int32) || arrayType == typeof(Int64))
+                            {
+                                arrayInstance.SetValue(int.Parse(subObjects[subObjName][index.ToString()], cultureInfo != null ? cultureInfo : CultureInfo.InvariantCulture), index);
+                            }
+                        }
+
+                        pi.SetValue(this, arrayInstance, null);
+                    }
+                    else
+                    {
+                        BaseValues instance = Activator.CreateInstance(pi.PropertyType) as BaseValues;
+                        // FIXME: Raise error on wrong object type
+                        if (instance == null) continue;
+
+                        instance.parseData(subObjects[subObjName], nameDict, pdb, sdb, cdb, rpdb, cultureInfo);
+                        pi.SetValue(this, instance, null);
+                    }
+
                 }
 
                 //use this for .net 4.0
@@ -139,6 +169,11 @@ namespace atbApi
                     {
                         if (cdb == null) continue;
                         pi.SetValue(this, cdb.getClimate(value), null);
+                    }
+                    else if (type == typeof(RainPattern))
+                    {
+                        if (rpdb == null) continue;
+                        pi.SetValue(this, rpdb.getRainPattern(value), null);
                     }
                     else if (type == typeof(IrrigationType))
                     {

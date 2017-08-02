@@ -78,7 +78,7 @@ namespace atbApi
             /*! english name */
             public String englishName { get; set; }
 
-            private static IDictionary<String, String> propertyMapper = new Dictionary<String, String>();
+            private IDictionary<String, String> propertyMapper = new Dictionary<String, String>();
 
             static PlantValues()
             {
