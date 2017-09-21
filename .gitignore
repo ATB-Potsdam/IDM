@@ -1,4 +1,6 @@
+## exclude project related data
 testData/
+IWRM_*.csv*
 
 ## exclude sign keys
 *.snk
