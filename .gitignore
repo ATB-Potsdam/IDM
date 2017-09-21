@@ -1,5 +1,8 @@
 testData/
 
+## exclude sign keys
+*.snk
+
 ## doxygen directory
 doc/
 
