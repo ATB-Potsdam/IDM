@@ -227,11 +227,12 @@ namespace atbApi
 
         public sealed class LocalPlantDb : PlantDb
         {
-            //plant data for public version
-            //private static String plantDataResource = "local.IWRM_ATB-PlantData.csv.gz";
             //plant data for IWRM version
-            private static String plantDataResource = "local.IWRM_ALL-PlantData.csv.gz";
-            private static Stream plantDbGzipFileStream = ResourceStream.GetResourceStream(plantDataResource);
+            private static String iwrmPlantDataResource = "local.IWRM_PlantData.csv.gz";
+            //plant data for public version
+            private static String atbPlantDataResource = "local.ATB_PlantData.csv.gz";
+            private static Stream plantDbGzipFileStream =
+                ResourceStream.ResourceExists(iwrmPlantDataResource) ? ResourceStream.GetResourceStream(iwrmPlantDataResource) : ResourceStream.GetResourceStream(atbPlantDataResource);
 
             private static readonly LocalPlantDb instance = new LocalPlantDb();
 

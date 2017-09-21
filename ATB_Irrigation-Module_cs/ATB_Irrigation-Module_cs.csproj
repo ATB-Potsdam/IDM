@@ -67,8 +67,10 @@
     <Compile Include="WebApiRequest.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="IWRM_ATB-SoilData.csv.gz" />
-    <EmbeddedResource Include="IWRM_ALL-PlantData.csv.gz" />
+    <EmbeddedResource Include="ATB_PlantData.csv.gz" />
+    <EmbeddedResource Include="ATB_SoilData.csv.gz" />
+    <EmbeddedResource Include="IWRM_PlantData.csv.gz" />
+    <EmbeddedResource Include="IWRM_SoilData.csv.gz" />
     <None Include="packages.config" />
     <None Include="rl3SignKey.snk" />
   </ItemGroup>

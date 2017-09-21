@@ -15,6 +15,13 @@ namespace local
 {
     internal static class ResourceStream
     {
+        private static string[] resourceNames = typeof(atbApi.Transpiration).GetTypeInfo().Assembly.GetManifestResourceNames();
+
+        internal static bool ResourceExists(String resourceName)
+        {
+            return Array.IndexOf(resourceNames, resourceName) >= 0;
+        }
+
         internal static Stream GetResourceStream(String resourceName)
         {
             //use this for .net 4.0

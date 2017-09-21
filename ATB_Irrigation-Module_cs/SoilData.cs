@@ -392,7 +392,10 @@ namespace atbApi
 
         public sealed class LocalSoilDb : SoilDb
         {
-            private static String soilDataResource = "local.IWRM_ATB-SoilData.csv.gz";
+            //soil data for IWRM version
+            //private static String soilDataResource = "local.IWRM_SoilData.csv.gz";
+            //soil data for public version
+            private static String soilDataResource = "local.ATB_SoilData.csv.gz";
             private static Stream soilDbGzipFileStream = ResourceStream.GetResourceStream(soilDataResource);
 
             private static readonly LocalSoilDb instance = new LocalSoilDb();

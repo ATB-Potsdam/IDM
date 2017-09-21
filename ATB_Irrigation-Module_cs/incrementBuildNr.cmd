@@ -1,13 +1,17 @@
 echo off
 setlocal EnableDelayedExpansion
 
+set sed="C:\MinGW\msys\1.0\bin\sed"
 
 if exist "C:\Program Files (x86)\Git\bin\git.exe" (
 	set git="C:\Program Files (x86)\Git\bin\git.exe"
-) else (
+)
+if exist "C:\Program Files\Git\bin\git.exe" (
+	set git="C:\Program Files\Git\bin\git.exe"
+)
+if exist "%LOCALAPPDATA%\Programs\Git\bin\git.exe" (
 	set git="%LOCALAPPDATA%\Programs\Git\bin\git.exe"
 )
-
 
 
 for /f "delims=" %%n in ('%git% rev-list HEAD --count') do set /a commit=%%n
@@ -30,8 +34,8 @@ echo updating revision:     %commit%
 echo updating build number: %build%
 
 
-C:\MinGW\msys\1.0\bin\sed -i "s/String\s*VERSION_REVISION\s*\=.*/String VERSION_REVISION = \"%commit%\"\;/" version.cs
-C:\MinGW\msys\1.0\bin\sed -i "s/String\s*VERSION_BUILD\s*\=.*/String VERSION_BUILD = \"%build%\"\;/" version.cs
+%sed% -i "s/String\s*VERSION_REVISION\s*\=.*/String VERSION_REVISION = \"%commit%\"\;/" version.cs
+%sed% -i "s/String\s*VERSION_BUILD\s*\=.*/String VERSION_BUILD = \"%build%\"\;/" version.cs
 
 endlocal
 
