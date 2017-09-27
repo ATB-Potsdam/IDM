@@ -20,4 +20,5 @@ In the solution explorer right click on the project and choose "Properties". Go 
 ## Use functions from the dll
 All exported functions are in the namespace "atbApi". Now is the right time to take a look at the documentation with a lot of code examples in the doc directory created by doxygen.
 
+# Credits
 ![bmbf logo](https://www.runlevel3.de/bmbf-eng_30.png)
