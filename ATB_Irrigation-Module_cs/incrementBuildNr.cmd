@@ -1,16 +1,17 @@
 echo off
 setlocal EnableDelayedExpansion
 
-set sed="C:\MinGW\msys\1.0\bin\sed"
-
 if exist "C:\Program Files (x86)\Git\bin\git.exe" (
 	set git="C:\Program Files (x86)\Git\bin\git.exe"
+	set sed="C:\Program Files (x86)\Git\usr\bin\sed.exe"
 )
 if exist "C:\Program Files\Git\bin\git.exe" (
 	set git="C:\Program Files\Git\bin\git.exe"
+	set sed="C:\Program Files\Git\usr\bin\sed.exe"
 )
 if exist "%LOCALAPPDATA%\Programs\Git\bin\git.exe" (
 	set git="%LOCALAPPDATA%\Programs\Git\bin\git.exe"
+	set sed="%LOCALAPPDATA%\Programs\Git\usr\bin\sed.exe"
 )
 
 
