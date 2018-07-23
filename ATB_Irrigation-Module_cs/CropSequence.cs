@@ -62,7 +62,12 @@ namespace atbApi
             public double depletionRzInitial { get; set; }
             /*! depletionDz The initial depletion in the zone under root up to 2m */
             public double depletionDzInitial { get; set; }
-
+            /*! salinityECiw Electrical conductivity of irrigation water, this default value is used if no management option is given. */
+            public double salinityECiw { get; set; }
+            /*! ksSalinityMin Keep salinity low to not exceed this stress factor. Additional irrigation water will be applied according to "leachingStrategy". */
+            public double ksSalinityMin { get; set; }
+            /*! leachingStrategy If the water stress due to salinity is greater than "ksSalinityMin", extra water is added to decrease salinity. */
+            public LeachingStrategy leachingStrategy { get; set; }
 
             private IDictionary<String, String> propertyMapper = new Dictionary<String, String>();
 
@@ -85,6 +90,26 @@ namespace atbApi
         }
 
         /*!
+         * \brief   Encapsulates the result of an irrigation calculation for one field only.
+         *
+         */
+
+        public class CropSequenceFieldResult
+        {
+            /*! short name of the irrigation network, used to sum up the amount of irrigation demand per netword and field */
+            public String networkId { get; set; }
+            /*! field id in the irrigation network, used to sum up the amount of irrigation demand per netword and field */
+            public String fieldId { get; set; }
+            /*! the water rigths, not internal used, relayed to caller to apply irrigation according to rights */
+            public int waterRights { get; set; }
+            /*! area of the field to convert the irrigationDemand from unit mm to l. */
+            public double area { get; set; }
+            /*! calculated irrigation demand */
+            public IrrigationAmount irrigationDemand { get; set; }
+        }
+
+
+        /*!
          * \brief   Encapsulates the result of an irrigation calculation.
          *          the results are grouped and sorted by irrigation districts and fields.
          *          This result from a dry run calculation can be modified and reinjected
@@ -99,7 +124,7 @@ namespace atbApi
             /*! error, unit: "none", description: If an error occured during the calculation, this value is not null and contains an error description. */
             public String error { get; set; }
             /*! irrigation demand of all districts and fields */
-            public IDictionary<String, IrrigationAmount> networkIdIrrigationDemand { get; set; }
+            public IDictionary<String, CropSequenceFieldResult> networkIdIrrigationDemand { get; set; }
 
             /*!
              * Default constructor.
@@ -108,7 +133,7 @@ namespace atbApi
 
             public CropSequenceResult()
             {
-                networkIdIrrigationDemand = new Dictionary<String, IrrigationAmount>();
+                networkIdIrrigationDemand = new Dictionary<String, CropSequenceFieldResult>();
             }
         }
 
@@ -123,7 +148,8 @@ namespace atbApi
         {
             private IList<CropSequenceValues> cropSequenceData = new List<CropSequenceValues>();
             private IDictionary<String, ETResult> _results = new Dictionary<String, ETResult>();
-            private IList<String> requiredFields = new List<String>() { "seedDate", "harvestDate", "plant" };
+            private IDictionary<String, Double> _areas = new Dictionary<String, Double>();
+            private IList<String> requiredFields = new List<String>() { "seedDate", "harvestDate", "plant", "fieldId", "networkId" };
 
             private String _name;
             private String _dataObjId;
@@ -192,6 +218,14 @@ namespace atbApi
              * \return  The results of all calculations
              */
             public IDictionary<String, ETResult> results { get { return this._results; } }
+
+            /*!
+             * \brief   public readonly property to access the area of each field to
+             *          calculate total amount instead of mm, the same key like for results is used
+             *
+             * \return  The areas of all fields
+             */
+            public IDictionary<String, Double> areas { get { return this._areas; } }
 
             /*!
              * \brief   public readonly property to access the number of datasets in this instance
@@ -311,7 +345,17 @@ namespace atbApi
 
                 cropSequenceData.Add(values);
 
+                if (values.networkId != null && values.fieldId != null)
+                {
+                    String _csIndex = csIndex(values);
+                    if (!_areas.ContainsKey(_csIndex)) _areas.Add(_csIndex, values.area);
+                }
+
                 return cropSequenceData.Count;
+            }
+
+            private String csIndex(CropSequenceValues csValues) {
+                return csValues.networkId + '.' + csValues.waterRights + '.' + csValues.fieldId;
             }
 
             /*!
@@ -331,6 +375,34 @@ namespace atbApi
                     if (values.seedDate <= date && values.harvestDate >= date) resultSequence.Add(values);
                 }
                 return resultSequence;
+            }
+
+            /*!
+             * \brief   Add fallows to all cropSequence gaps for each networkId.waterRights.fieldId
+             *
+             * \param   the fallow plant
+             * 
+             * \return  number of added fallows
+             */
+
+            public int addFallows(Plant fallowCrop)
+            {
+                if (cropSequenceData == null) return 0;
+                
+                IDictionary<String, IDictionary<DateTime, CropSequenceValues>> csSorted = new Dictionary<String, IDictionary<DateTime, CropSequenceValues>>();
+                int insertedFallows = 0;
+
+                foreach (CropSequenceValues values in cropSequenceData)
+                {
+                    String csKey = csIndex(values);
+                    if (!csSorted.ContainsKey(csKey))
+                    {
+                        csSorted[csKey] = new Dictionary<DateTime, CropSequenceValues>();
+                    }
+                    csSorted[csKey][values.seedDate] = values;
+                }
+
+                return insertedFallows;
             }
 
             //merge cropSequence args into given args
@@ -373,19 +445,19 @@ namespace atbApi
                 IList<CropSequenceValues> csPart = getCropSequence(start);
                 foreach (CropSequenceValues cs in csPart)
                 {
-                    String csIndex = cs.networkId + '.' + cs.waterRights + '.' + cs.fieldId;
+                    String _csIndex = csIndex(cs);
 
                     ETArgs tmpArgs = MergeArgs(ref etArgs, cs);
                     tmpArgs.start = start;
                     tmpArgs.end = end;
                     if (tmpArgs.plant == null)
                     {
-                        Debug.WriteLine("no plant for cropSequence: " + csIndex + " skipping sequence " + start.ToString());
+                        Debug.WriteLine("no plant for cropSequence: " + _csIndex + " skipping sequence " + start.ToString());
                         continue;
                     }
 
                     ETResult tmpResult = null;
-                    if (_results.ContainsKey(csIndex)) tmpResult = _results[csIndex];
+                    if (_results.ContainsKey(_csIndex)) tmpResult = _results[_csIndex];
 
                     if (dryRun)
                     {
@@ -399,7 +471,7 @@ namespace atbApi
                     }
                     else
                     {
-                        if (irrigationAmount.networkIdIrrigationDemand.ContainsKey(csIndex))
+                        if (irrigationAmount.networkIdIrrigationDemand.ContainsKey(_csIndex))
                         {
                             //Debug.WriteLine("found irrigation: " + csIndex + ": " + mbResult.networkIdIrrigationDemand[csIndex].ToString());
                             //FIXME: convert irrigation to schedule and add to tmpArgs
@@ -407,20 +479,36 @@ namespace atbApi
                             DateTime endMax = new DateTime(Math.Min(tmpArgs.harvestDate.Ticks, tmpArgs.end != null ? ((DateTime)tmpArgs.end).Ticks : 0));
                             TimeSpan scheduleLength = endMax.Subtract(startMin);
                             DateTime scheduleMid = startMin.AddMinutes(scheduleLength.TotalMinutes / 2);
-                            if (tmpArgs.irrigationSchedule == null) tmpArgs.irrigationSchedule = new IrrigationSchedule(cs.irrigationType);
-                            tmpArgs.irrigationSchedule.schedule.Add(scheduleMid, irrigationAmount.networkIdIrrigationDemand[csIndex].amount);
+                            if (tmpArgs.irrigationSchedule == null)
+                            {
+                                if (cs.irrigationType == null)
+                                {
+                                    tmpArgs.irrigationSchedule = new IrrigationSchedule(cs.autoIrrigation.type);
+                                    tmpArgs.autoIrr.type = cs.autoIrrigation.type;
+                                }
+                                else
+                                {
+                                    tmpArgs.irrigationSchedule = new IrrigationSchedule(cs.irrigationType);
+                                }
+                                tmpArgs.irrigationSchedule.schedule.Add(scheduleMid, irrigationAmount.networkIdIrrigationDemand[_csIndex].irrigationDemand.amount);
+                            }
                         }
                         Transpiration.ETCalc(ref tmpArgs, ref tmpResult, dryRun);
-                        _results[csIndex] = tmpResult;
+                        _results[_csIndex] = tmpResult;
                     }
 
-                    if (localMbResult.networkIdIrrigationDemand.ContainsKey(csIndex))
+                    if (localMbResult.networkIdIrrigationDemand.ContainsKey(_csIndex))
                     {
-                        localMbResult.networkIdIrrigationDemand[csIndex].surfaceWater.amount += tmpResult.autoNetIrrigation;
+                        localMbResult.networkIdIrrigationDemand[_csIndex].irrigationDemand.surfaceWater.amount += tmpResult.autoNetIrrigation;
                     }
                     else
                     {
-                        localMbResult.networkIdIrrigationDemand[csIndex] = new IrrigationAmount(surfaceWaterAmount: tmpResult.autoNetIrrigation);
+                        localMbResult.networkIdIrrigationDemand[_csIndex] = new CropSequenceFieldResult();
+                        localMbResult.networkIdIrrigationDemand[_csIndex].area = cs.area;
+                        localMbResult.networkIdIrrigationDemand[_csIndex].fieldId = cs.fieldId;
+                        localMbResult.networkIdIrrigationDemand[_csIndex].networkId = cs.networkId;
+                        localMbResult.networkIdIrrigationDemand[_csIndex].waterRights = cs.waterRights;
+                        localMbResult.networkIdIrrigationDemand[_csIndex].irrigationDemand = new IrrigationAmount(surfaceWaterAmount: tmpResult.autoNetIrrigation);
                     }
 
                     localMbResult.error += tmpResult.error;

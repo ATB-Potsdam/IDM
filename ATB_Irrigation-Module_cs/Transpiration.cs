@@ -614,11 +614,13 @@ namespace atbApi
                 var irrigationType = args.irrigationSchedule != null ? args.irrigationSchedule.type : args.autoIrr != null ? args.autoIrr.type : IrrigationTypes.sprinkler;
                 if (irrigationType != null) {
                     loopResult.irrigationFw = irrigationType.fw;
+                    loopResult.autoIrrigationFw = irrigationType.fw;
                     result.autoIrrigationFw = irrigationType.fw;
                     result.irrigationFw = irrigationType.fw;
                 }
                 else {
                     loopResult.irrigationFw = 1;
+                    loopResult.autoIrrigationFw = 1;
                     result.autoIrrigationFw = 1;
                     result.irrigationFw = 1;
                 }
@@ -673,6 +675,7 @@ namespace atbApi
                         if (soilSaturation < 1 - loopResult.pAdj - args.autoIrr.deficit)
                         {
                             loopResult.autoIrrigation = args.autoIrr.amount.amount;
+                            loopResult.autoIrrigationFw = args.autoIrr.type.fw;
                             loopResult.autoNetIrrigation = loopResult.autoIrrigation * args.autoIrr.type.fw;
                             if (args.autoIrr.amount.amount == 0)
                             {
@@ -766,7 +769,7 @@ namespace atbApi
                     ref eConditions,
                     plantSet,
                     climateSet,
-                    irrigationType,
+                    irrigationType != null ? irrigationType.name : "sprinkler",
                     loopResult.et0,
                     args.eFactor,
                     tew,

@@ -8,6 +8,7 @@
  */
 
 using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -136,6 +137,7 @@ namespace atbApi
                 {
                     IDictionary<String, String> fields;
                     fields = csvReader.readLine();
+                    //Debug.WriteLine(fields["dataObjName"] + " day: " + fields["_iterator.day"]);
 
                     if (fields == null || !fields.ContainsKey("dataObjName") || String.IsNullOrEmpty(fields["dataObjName"])) continue;
                     String name = fields["dataObjName"];

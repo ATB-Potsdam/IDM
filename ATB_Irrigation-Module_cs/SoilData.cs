@@ -289,7 +289,6 @@ namespace atbApi
             private const double DepthOffset = 0.000000000001;
             private Stream soilDbFileStream;
             private IDictionary<String, Soil> soils = new Dictionary<String, Soil>();
-            private ICollection<String> names = new HashSet<String>();
             private IDictionary<String, double> maxDepth = new Dictionary<String, double>();
             private IDictionary<String, IDictionary<Double, SoilValues>> soilData = new Dictionary<String, IDictionary<Double, SoilValues>>();
 
@@ -393,9 +392,9 @@ namespace atbApi
         public sealed class LocalSoilDb : SoilDb
         {
             //soil data for IWRM version
-            //private static String soilDataResource = "local.IWRM_SoilData.csv.gz";
+            private static String soilDataResource = "local.IWRM_SoilData.csv.gz";
             //soil data for public version
-            private static String soilDataResource = "local.ATB_SoilData.csv.gz";
+            //private static String soilDataResource = "local.ATB_SoilData.csv.gz";
             private static Stream soilDbGzipFileStream = ResourceStream.GetResourceStream(soilDataResource);
 
             private static readonly LocalSoilDb instance = new LocalSoilDb();

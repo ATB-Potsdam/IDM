@@ -148,6 +148,9 @@ namespace local
     
         internal static Stream TryUnzip(Stream fileStream)
         {
+            //not seekable streams cannot be unzipped
+            if (!fileStream.CanSeek) return fileStream;
+
             Byte[] gzipSig = new Byte[3];
             //read gzip signature 0x1F 0x8B 0x08
             fileStream.Read(gzipSig, 0, gzipSig.Length);

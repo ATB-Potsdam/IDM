@@ -166,6 +166,22 @@ namespace atbApi
             public static readonly IrrigationType drip = new IrrigationType(0.3, 0, "drip", 3, 50);
         }
 
+        /*! Values that represent different leaching strategies. */
+        public enum LeachingStrategy
+        {
+            /*! add irrigation water for leaching if salinity is above certain level */
+            on_demand = 0x0,
+            /*! add irrigation water for leaching if salinity stress of plant is above certain level */
+            on_demand_stress = 0x1,
+            /*! add irrigation water "leaching fraction" on every irrigation event */
+            always = 0x2,
+            /*! add irrigation water for leaching at start of growing season */
+            start_season = 0x3,
+            /*! add irrigation water for leaching once a month */
+            monthly = 0x4,
+        }
+        
+
         /*!
          * \brief   class that holds information how automatic irrigation is applied.
          *
