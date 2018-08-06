@@ -167,6 +167,8 @@ Public Class Form1
         Dim etResult As atbApi.ETResult = Nothing
         Dim startDate As DateTime = New DateTime(seedDate.Year, seedDate.Month, 1, 0, 0, 0, seedDate.Kind)
         Dim endDate As DateTime = New DateTime(seedDate.Year, seedDate.Month, DateTime.DaysInMonth(seedDate.Year, seedDate.Month), 0, 0, 0, seedDate.Kind)
+        'public SoilConditions(Soil soil, double zr = 0.3, double depletionRz = 0.4, double depletionDz = 0.3, double depletionDe = 0.4)
+        etArgs.lastConditions = New atbApi.data.SoilConditions(soil, 0.2)
         'etArgs.autoIrr = New atbApi.data.AutoIrrigationControl()
         'etArgs.autoIrr = New atbApi.data.AutoIrrigationControl(level:=0, cutoff:=0.15, deficit:=0.2)
         'etArgs.autoIrr = New atbApi.data.AutoIrrigationControl(level:=0, cutoff:=0.1)

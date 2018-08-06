@@ -548,7 +548,9 @@ namespace atbApi
             if (result.error != null) return false;
 
             //fill variables
-            var plantSetStart = args.plant.getValues(1);
+            //FIXME:    check if this is correct:          var plantSetStart = args.plant.getValues(1);
+            var plantDay = args.plant.getPlantDay((DateTime)args.start, args.seedDate, args.harvestDate);
+            var plantSetStart = args.plant.getValues(plantDay);
             if (plantSetStart == null || !plantSetStart.Zr.HasValue)
             {
                 result.error = "ETTools: cannot read plant data for day 1, cannot continue!";
@@ -735,6 +737,17 @@ namespace atbApi
                         - loopResult.interceptionAutoIrr
                     );
 
+                //adjust moved zone border
+                //moved border rootZone -> adjust drainage
+                if (Math.Min((double)plantSet.Zr, args.soil.maxDepth) != args.lastConditions.zr)
+                {
+                    var dzDepth = args.soil.maxDepth - args.lastConditions.zr;
+                    var zDiff = (double)plantSet.Zr - args.lastConditions.zr;
+                    var drDiff = zDiff * args.lastConditions.drDz / dzDepth;
+                    args.lastConditions.drRz += drDiff;
+                    args.lastConditions.drDz -= drDiff;
+                }
+
                 loopResult.plantDay = (int)plantDay;
                 loopResult.plantZr = zr;
                 loopResult.plantStage = stageName;
@@ -789,17 +802,6 @@ namespace atbApi
                 loopResult.eAct = eResult.e;
                 loopResult.de = eResult.de;
                 loopResult.dpe = eResult.dpe;
-
-                //adjust moved zone border
-                //moved border rootZone -> adjust drainage
-                if (Math.Min((double)plantSet.Zr, args.soil.maxDepth) != args.lastConditions.zr)
-                {
-                    var dzDepth = args.soil.maxDepth - args.lastConditions.zr;
-                    var zDiff = (double)plantSet.Zr - args.lastConditions.zr;
-                    var drDiff = zDiff * args.lastConditions.drDz / dzDepth;
-                    args.lastConditions.drRz += drDiff;
-                    args.lastConditions.drDz -= drDiff;
-                }
 
                 //args.lastConditions = SoilConditionTools.AdjustSoilConditionsZr(args.lastConditions, tawRz, tawDz, (double)plantSet.Zr, args.soil.maxDepth);
                 //calculate soil water balance
