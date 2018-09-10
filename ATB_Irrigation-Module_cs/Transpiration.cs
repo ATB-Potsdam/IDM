@@ -531,13 +531,10 @@ namespace atbApi
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
             //result is not empty, assume this is a continued calculation, just continue loop
-            if (result != null) {
-                if (args.lastConditions == null && result.lastConditions != null)
-                {
-                    args.lastConditions = result.lastConditions;
-                    //continue calculation only if there are lastConditions
-                    return ETCalcLoop(ref args, ref result, stopWatch, keepDailyValues, dryRun);
-                }
+            if (result != null && result.lastConditions != null) {
+                args.lastConditions = result.lastConditions;
+                //continue calculation only if there are lastConditions
+                return ETCalcLoop(ref args, ref result, stopWatch, keepDailyValues, dryRun);
             }
             else
             {
@@ -639,7 +636,8 @@ namespace atbApi
                 var tew = 1000 * (soilSetZe.Qfc - 0.5 * soilSetZe.Qwp) * ze;
                 var cf = (1 - Math.Exp(-(double)plantSet.LAI * 0.385));
 
-                loopResult.kcbAdj= (double)plantSet.Kcb;
+                loopResult.kcb= (double)plantSet.Kcb;
+                loopResult.kcbAdj = (double)plantSet.Kcb;
                 if ((plantSet.stage == PlantStage.mid_season || plantSet.stage == PlantStage.late_season) && plantSet.Kcb > 0.45)
                 {
                     loopResult.kcbAdj = (double)plantSet.Kcb + (0.04 * ((double)climateSet.windspeed - 2) - 0.004 * ((double)climateSet.humidity - 45)) * Math.Pow(((double)plantSet.height / 3), 0.3);
