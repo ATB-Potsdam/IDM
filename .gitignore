@@ -1,5 +1,6 @@
 ## exclude project related data
 testData/
+testDataSent/
 IWRM_*.csv*
 
 ## exclude sign keys

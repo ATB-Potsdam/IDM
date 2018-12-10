@@ -263,6 +263,7 @@ Public Class Form1
         Do
             'set endDate of one loop to last day of month
             Dim endDate As DateTime = New DateTime(loopDate.Year, loopDate.Month, DateTime.DaysInMonth(loopDate.Year, loopDate.Month), 0, 0, 0, loopDate.Kind)
+            endDate = New DateTime(1996, 12, 15, 0, 0, 0, DateTimeKind.Utc)
             'calculate irrigation demand and don't cumulate results and plant development -> dryRun:=True
             result = cS.runCropSequence(start:=loopDate, end:=endDate, etArgs:=etArgs, irrigationAmount:=Nothing, dryRun:=True)
             'modify irrigation demand, here just divide by 2 as an example
@@ -273,7 +274,7 @@ Public Class Form1
             'calculate again with real irrigation amount -> mbResult:=result, dryRun:=False
             result = cS.runCropSequence(start:=loopDate, end:=endDate, etArgs:=etArgs, irrigationAmount:=result, dryRun:=False)
             'calculate next timestep
-            loopDate = loopDate.AddMonths(1)
+            '            loopDate = loopDate.AddMonths(1)
         Loop While loopDate < loopEnd
 
         Dim totalAutoNetIrr As Double = 0
